@@ -57,9 +57,9 @@ export function Sidebar() {
   else if (user?.role === 'staff') menuItems = staffMenuItems;
 
   return (
-    <div className="w-64 backdrop-blur-xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border-r border-white/10 text-white flex flex-col">
+    <div className="w-64 sidebar-container flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-white/10">
+      <div className="p-6 sidebar-border">
         <div className="flex items-center gap-3">
           {settings.logo ? (
             <img src={settings.logo} alt="Logo" className="w-10 h-10 rounded-lg object-contain" />
@@ -71,14 +71,14 @@ export function Sidebar() {
             </div>
           )}
           <div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">{settings.hospitalName}</h1>
-            <p className="text-xs text-gray-400">Hospital System</p>
+            <h1 className="text-lg font-bold sidebar-text">{settings.hospitalName}</h1>
+            <p className="text-xs sidebar-text-muted">Hospital System</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+      <nav className="flex-1 space-y-1 p-4 overflow-y-auto sidebar-nav">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -90,8 +90,8 @@ export function Sidebar() {
               className={cn(
                 'flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 group',
                 isActive
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/30'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  ? 'sidebar-nav-active'
+                  : 'sidebar-nav-inactive'
               )}
             >
               <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
@@ -102,10 +102,10 @@ export function Sidebar() {
       </nav>
 
       {/* Footer info */}
-      <div className="p-4 border-t border-white/10">
-        <div className="text-xs text-gray-400">
-          <p className="font-semibold text-white mb-1">{user?.name}</p>
-          <p className="capitalize">{user?.role}</p>
+      <div className="p-4 sidebar-border">
+        <div className="text-xs sidebar-text">
+          <p className="font-semibold sidebar-text mb-1">{user?.name}</p>
+          <p className="capitalize sidebar-text-muted">{user?.role}</p>
         </div>
       </div>
     </div>
