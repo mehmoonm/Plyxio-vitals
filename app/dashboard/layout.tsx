@@ -36,11 +36,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="flex h-screen" style={{ backgroundImage: 'var(--background-gradient)' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto bg-gradient-to-b from-slate-900/50 to-slate-950/50">
+        <main className="flex-1 overflow-auto" style={{ backgroundImage: 'var(--main-gradient)' }}>
           <div className="p-6">
             {children}
           </div>

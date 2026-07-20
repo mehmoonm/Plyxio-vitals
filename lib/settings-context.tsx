@@ -52,8 +52,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (theme === 'system') {
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       html.classList.toggle('dark', isDark);
+      html.classList.toggle('light', !isDark);
+    } else if (theme === 'dark') {
+      html.classList.add('dark');
+      html.classList.remove('light');
     } else {
-      html.classList.toggle('dark', theme === 'dark');
+      html.classList.add('light');
+      html.classList.remove('dark');
     }
   };
 
