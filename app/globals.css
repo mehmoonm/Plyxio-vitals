@@ -48,9 +48,9 @@
 :root {
   color-scheme: light;
   --background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #16213e 100%);
-  --foreground: #ffffff;
+  --foreground: #f1f5f9;
   --card: rgba(255, 255, 255, 0.1);
-  --card-foreground: #ffffff;
+  --card-foreground: #f1f5f9;
   --popover: rgba(255, 255, 255, 0.05);
   --popover-foreground: #ffffff;
   --primary: #6366f1;
@@ -72,7 +72,7 @@
   --chart-5: #f59e0b;
   --radius: 0.875rem;
   --sidebar: rgba(20, 20, 40, 0.85);
-  --sidebar-foreground: #ffffff;
+  --sidebar-foreground: #f1f5f9;
   --sidebar-primary: #6366f1;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(99, 102, 241, 0.15);
@@ -84,11 +84,11 @@
 .dark {
   color-scheme: dark;
   --background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #16213e 100%);
-  --foreground: #ffffff;
+  --foreground: #f1f5f9;
   --card: rgba(255, 255, 255, 0.1);
-  --card-foreground: #ffffff;
+  --card-foreground: #f1f5f9;
   --popover: rgba(255, 255, 255, 0.05);
-  --popover-foreground: #ffffff;
+  --popover-foreground: #f1f5f9;
   --primary: #6366f1;
   --primary-foreground: #ffffff;
   --secondary: rgba(99, 102, 241, 0.15);
@@ -107,7 +107,7 @@
   --chart-4: #ec4899;
   --chart-5: #f59e0b;
   --sidebar: rgba(20, 20, 40, 0.85);
-  --sidebar-foreground: #ffffff;
+  --sidebar-foreground: #f1f5f9;
   --sidebar-primary: #6366f1;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(99, 102, 241, 0.15);
@@ -123,10 +123,10 @@
     --foreground: #ffffff;
     --card: rgba(255, 255, 255, 0.1);
     --card-foreground: #ffffff;
-    --popover: rgba(255, 255, 255, 0.05);
-    --popover-foreground: #ffffff;
-    --primary: #6366f1;
-    --primary-foreground: #ffffff;
+  --popover: rgba(255, 255, 255, 0.05);
+  --popover-foreground: #f1f5f9;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
     --secondary: rgba(99, 102, 241, 0.15);
     --secondary-foreground: #6366f1;
     --muted: rgba(255, 255, 255, 0.08);
@@ -143,7 +143,7 @@
     --chart-4: #ec4899;
     --chart-5: #f59e0b;
     --sidebar: rgba(20, 20, 40, 0.85);
-    --sidebar-foreground: #ffffff;
+    --sidebar-foreground: #f1f5f9;
     --sidebar-primary: #6366f1;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: rgba(99, 102, 241, 0.15);
