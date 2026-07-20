@@ -205,6 +205,44 @@
   @apply backdrop-blur-lg bg-white/30 border border-slate-300/50 text-slate-900 placeholder-slate-500 focus:bg-white/40 focus:border-slate-400/70 transition-all duration-300;
 }
 
+.light {
+  color-scheme: light;
+}
+
+.light .text-white {
+  color: #1e293b !important;
+}
+
+.light .text-gray-200,
+.light .text-gray-100,
+.light .text-gray-300,
+.light .text-gray-400,
+.light .text-slate-200,
+.light .text-slate-300,
+.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light .text-slate-900 {
+  color: #0f172a !important;
+}
+
+.light h1,
+.light h2,
+.light h3,
+.light h4,
+.light h5,
+.light h6 {
+  color: #0f172a !important;
+}
+
+.light p,
+.light span,
+.light label,
+.light div {
+  color: #1e293b !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
