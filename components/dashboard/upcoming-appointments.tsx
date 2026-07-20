@@ -13,35 +13,31 @@ export function UpcomingAppointments() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Calendar className="w-5 h-5" />
-          <span>Upcoming Appointments</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {upcoming.length === 0 ? (
-            <p className="text-gray-500 text-sm">No upcoming appointments</p>
-          ) : (
-            upcoming.map((apt) => (
-              <div key={apt.id} className="flex items-start space-x-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="bg-blue-500 text-white rounded-lg p-2">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{getPatientName(apt.patientId)}</p>
-                  <p className="text-sm text-gray-600">{apt.reason}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {apt.appointmentDate} at {apt.appointmentTime}
-                  </p>
-                </div>
+    <div className="glass-card rounded-2xl p-6 space-y-4">
+      <h3 className="text-xl font-bold text-white flex items-center gap-2">
+        <Calendar className="w-5 h-5 text-cyan-400" />
+        Upcoming Appointments
+      </h3>
+      <div className="space-y-3">
+        {upcoming.length === 0 ? (
+          <p className="text-gray-400 text-sm">No upcoming appointments</p>
+        ) : (
+          upcoming.map((apt) => (
+            <div key={apt.id} className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-400/30 hover:border-cyan-400/60 hover:from-cyan-600/30 hover:to-blue-600/30 transition-all duration-300 group">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Calendar className="w-6 h-6 text-white" />
               </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-white">{getPatientName(apt.patientId)}</p>
+                <p className="text-sm text-gray-300">{apt.reason}</p>
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                  📅 {apt.appointmentDate} at {apt.appointmentTime}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }

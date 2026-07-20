@@ -21,31 +21,38 @@ export default function DashboardPage() {
   const lowInventoryItems = mockInventory.filter((item) => item.quantity < item.reorderLevel).length;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Welcome, {user?.name}</h1>
-        <p className="text-gray-500 mt-2">Here&apos;s an overview of your hospital management system</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-300 to-cyan-300 bg-clip-text text-transparent">
+              Welcome back, {user?.name}
+            </h1>
+            <p className="text-gray-400 mt-2 text-lg">Here&apos;s your hospital overview at a glance</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <StatCard
           title="Total Patients"
           value={totalPatients}
           icon={Users}
-          color="bg-blue-500"
+          color="from-indigo-600 to-indigo-500"
         />
         <StatCard
           title="Total Appointments"
           value={totalAppointments}
           icon={Calendar}
-          color="bg-green-500"
+          color="from-cyan-600 to-cyan-500"
         />
         <StatCard
           title="Total Revenue"
           value={`$${totalRevenue}`}
           icon={TrendingUp}
-          color="bg-purple-500"
+          color="from-purple-600 to-purple-500"
         />
         {user?.role === 'admin' && (
           <>
@@ -53,19 +60,19 @@ export default function DashboardPage() {
               title="Total Staff"
               value={totalStaff}
               icon={Users}
-              color="bg-orange-500"
+              color="from-orange-600 to-orange-500"
             />
             <StatCard
               title="Pending Appointments"
               value={upcomingAppointments}
               icon={Calendar}
-              color="bg-red-500"
+              color="from-pink-600 to-pink-500"
             />
             <StatCard
               title="Low Inventory Items"
               value={lowInventoryItems}
               icon={Package}
-              color="bg-yellow-500"
+              color="from-amber-600 to-amber-500"
             />
           </>
         )}

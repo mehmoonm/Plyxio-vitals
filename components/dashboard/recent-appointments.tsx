@@ -20,43 +20,39 @@ export function RecentAppointments() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
+        return 'from-cyan-600/40 to-cyan-500/20 border-cyan-400/50 text-cyan-200';
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'from-emerald-600/40 to-emerald-500/20 border-emerald-400/50 text-emerald-200';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'from-red-600/40 to-red-500/20 border-red-400/50 text-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'from-gray-600/40 to-gray-500/20 border-gray-400/50 text-gray-200';
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Appointments</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {recent.length === 0 ? (
-            <p className="text-gray-500 text-sm">No appointments found</p>
-          ) : (
-            recent.map((apt) => (
-              <div key={apt.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm text-gray-900">{getPatientName(apt.patientId)}</p>
-                  <p className="text-xs text-gray-500">
-                    {apt.appointmentDate} at {apt.appointmentTime}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">{getDoctorName(apt.doctorId)}</p>
-                </div>
-                <Badge className={getStatusColor(apt.status)}>
-                  {apt.status}
-                </Badge>
+    <div className="glass-card rounded-2xl p-6 space-y-4">
+      <h3 className="text-xl font-bold text-white">Recent Appointments</h3>
+      <div className="space-y-3">
+        {recent.length === 0 ? (
+          <p className="text-gray-400 text-sm">No appointments found</p>
+        ) : (
+          recent.map((apt) => (
+            <div key={apt.id} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-white/5 to-white/10 border border-white/10 hover:border-white/20 hover:bg-gradient-to-r hover:from-white/10 hover:to-white/15 transition-all duration-300 group">
+              <div className="flex-1">
+                <p className="font-semibold text-white text-sm">{getPatientName(apt.patientId)}</p>
+                <p className="text-xs text-gray-400">
+                  {apt.appointmentDate} at {apt.appointmentTime}
+                </p>
+                <p className="text-xs text-gray-300 mt-1">{getDoctorName(apt.doctorId)}</p>
               </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-lg bg-gradient-to-r ${getStatusColor(apt.status)} border`}>
+                {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
