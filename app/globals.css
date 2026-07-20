@@ -48,11 +48,11 @@
 :root {
   color-scheme: light;
   --background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #16213e 100%);
-  --foreground: #1e293b;
-  --card: rgba(255, 255, 255, 0.1);
-  --card-foreground: #1e293b;
-  --popover: rgba(255, 255, 255, 0.05);
-  --popover-foreground: #1e293b;
+  --foreground: #f1f5f9;
+  --card: rgba(15, 23, 42, 0.4);
+  --card-foreground: #f1f5f9;
+  --popover: rgba(15, 23, 42, 0.4);
+  --popover-foreground: #f1f5f9;
   --primary: #6366f1;
   --primary-foreground: #ffffff;
   --secondary: rgba(99, 102, 241, 0.15);
@@ -84,11 +84,11 @@
 .dark {
   color-scheme: dark;
   --background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #16213e 100%);
-  --foreground: #1e293b;
-  --card: rgba(255, 255, 255, 0.1);
-  --card-foreground: #1e293b;
-  --popover: rgba(255, 255, 255, 0.05);
-  --popover-foreground: #1e293b;
+  --foreground: #f1f5f9;
+  --card: rgba(15, 23, 42, 0.4);
+  --card-foreground: #f1f5f9;
+  --popover: rgba(15, 23, 42, 0.4);
+  --popover-foreground: #f1f5f9;
   --primary: #6366f1;
   --primary-foreground: #ffffff;
   --secondary: rgba(99, 102, 241, 0.15);
@@ -120,11 +120,11 @@
   :root:not(.light) {
     color-scheme: dark;
     --background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #16213e 100%);
-    --foreground: #1e293b;
-    --card: rgba(255, 255, 255, 0.1);
-    --card-foreground: #1e293b;
-  --popover: rgba(255, 255, 255, 0.05);
-  --popover-foreground: #1e293b;
+    --foreground: #f1f5f9;
+    --card: rgba(15, 23, 42, 0.4);
+    --card-foreground: #f1f5f9;
+  --popover: rgba(15, 23, 42, 0.4);
+  --popover-foreground: #f1f5f9;
   --primary: #6366f1;
   --primary-foreground: #ffffff;
     --secondary: rgba(99, 102, 241, 0.15);
@@ -168,19 +168,19 @@
 /* Glassmorphism utilities */
 @layer utilities {
   .glass {
-    @apply backdrop-blur-xl bg-white/10 border border-white/20;
+    @apply backdrop-blur-xl bg-slate-950/40 border border-slate-700/50;
   }
   
   .glass-dark {
-    @apply backdrop-blur-xl bg-slate-950/40 border border-white/10;
+    @apply backdrop-blur-xl bg-slate-950/50 border border-slate-700/50;
   }
   
   .glass-card {
-    @apply backdrop-blur-2xl bg-gradient-to-br from-white/15 to-white/5 border border-white/20 shadow-2xl;
+    @apply backdrop-blur-2xl bg-gradient-to-br from-slate-900/60 to-slate-950/50 border border-slate-700/50 shadow-2xl;
   }
   
   .glass-input {
-    @apply backdrop-blur-lg bg-white/5 border border-white/15 text-white placeholder-slate-400 focus:bg-white/10 focus:border-white/30 transition-all duration-300;
+    @apply backdrop-blur-lg bg-slate-900/40 border border-slate-700/50 text-white placeholder-slate-400 focus:bg-slate-900/60 focus:border-slate-600/70 transition-all duration-300;
   }
   
   .gradient-primary {
