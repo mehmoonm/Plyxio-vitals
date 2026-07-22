@@ -51,10 +51,10 @@ export function Sidebar() {
   const { settings } = useSettings();
 
   let menuItems = [];
-  if (user?.role === 'admin') menuItems = adminMenuItems;
-  else if (user?.role === 'doctor') menuItems = doctorMenuItems;
-  else if (user?.role === 'patient') menuItems = patientMenuItems;
-  else if (user?.role === 'staff') menuItems = staffMenuItems;
+  if (user?.role === 'HOSPITAL_ADMIN' || user?.role === 'SUPER_ADMIN') menuItems = adminMenuItems;
+  else if (user?.role === 'DOCTOR') menuItems = doctorMenuItems;
+  else if (user?.role === 'RECEPTIONIST') menuItems = patientMenuItems;
+  else menuItems = staffMenuItems;
 
   return (
     <div className="w-64 sidebar-container flex flex-col">
@@ -104,8 +104,8 @@ export function Sidebar() {
       {/* Footer info */}
       <div className="p-4 sidebar-border">
         <div className="text-xs sidebar-text">
-          <p className="font-semibold sidebar-text mb-1">{user?.name}</p>
-          <p className="capitalize sidebar-text-muted">{user?.role}</p>
+          <p className="font-semibold sidebar-text mb-1">{user?.fullName}</p>
+          <p className="capitalize sidebar-text-muted">{user?.role?.replace('_', ' ')}</p>
         </div>
       </div>
     </div>

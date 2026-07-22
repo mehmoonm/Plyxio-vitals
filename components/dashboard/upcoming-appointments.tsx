@@ -1,16 +1,24 @@
 'use client';
 
-import { mockAppointments, mockPatients } from '@/lib/mock-data';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import type { DbAppointment } from '@/lib/supabase/types';
 import { Calendar } from 'lucide-react';
 
 export function UpcomingAppointments() {
-  const upcoming = mockAppointments.filter((apt) => apt.status === 'scheduled').slice(0, 5);
+  const [upcoming, setUpcoming] = useState<DbAppointment[]>([]);
 
-  const getPatientName = (patientId: string) => {
-    const patient = mockPatients.find((p) => p.id === patientId);
-    return patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown';
-  };
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('Appointment')
+        .select('*, Patient(fullName)')
+        .eq('status', 'SCHEDULED')
+        .order('scheduledAt', { ascending: true })
+        .limit(5);
+      if (data) setUpcoming(data as any);
+    })();
+  }, []);
 
   return (
     <div className="glass-card rounded-2xl p-6 space-y-4">
@@ -28,11 +36,9 @@ export function UpcomingAppointments() {
                 <Calendar className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white">{getPatientName(apt.patientId)}</p>
+                <p className="font-semibold text-white">{apt.Patient?.fullName || 'Unknown'}</p>
                 <p className="text-sm text-gray-300">{apt.reason}</p>
-                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                  📅 {apt.appointmentDate} at {apt.appointmentTime}
-                </p>
+                <p className="text-xs text-gray-400 mt-1">📅 {new Date(apt.scheduledAt).toLocaleString()}</p>
               </div>
             </div>
           ))

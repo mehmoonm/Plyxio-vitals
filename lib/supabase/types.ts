@@ -1,0 +1,151 @@
+// Types matching the real PLYXIO HMS Supabase schema (public schema).
+// These mirror actual DB columns rather than the old mock-data shapes.
+
+export type Role =
+  | 'SUPER_ADMIN' | 'HOSPITAL_ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST'
+  | 'PHARMACIST' | 'LAB_TECHNICIAN' | 'RADIOLOGIST' | 'BILLING_CLERK' | 'ACCOUNTANT';
+
+export interface DbUser {
+  id: string;
+  hospitalId: string | null;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  role: Role;
+  departmentId: string | null;
+  specialty: string | null;
+  licenseNo: string | null;
+  isActive: boolean;
+}
+
+export interface DbPatient {
+  id: string;
+  hospitalId: string;
+  mrn: string;
+  fullName: string;
+  fatherOrHusbandName: string | null;
+  cnic: string | null;
+  dateOfBirth: string | null;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  bloodGroup: string | null;
+  allergies: string | null;
+  knownConditions: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface DbAppointment {
+  id: string;
+  hospitalId: string;
+  patientId: string;
+  doctorId: string;
+  scheduledAt: string;
+  reason: string | null;
+  status: 'SCHEDULED' | 'CHECKED_IN' | 'IN_CONSULTATION' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  tokenNumber: number | null;
+  Patient?: DbPatient;
+  User?: DbUser;
+}
+
+export interface DbInvoice {
+  id: string;
+  hospitalId: string;
+  patientId: string;
+  invoiceNo: string;
+  status: 'DRAFT' | 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' | 'WRITTEN_OFF';
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  amountPaid: number;
+  createdAt: string;
+  Patient?: DbPatient;
+}
+
+export interface DbDrug {
+  id: string;
+  hospitalId: string;
+  name: string;
+  genericName: string | null;
+  form: string | null;
+  strength: string | null;
+}
+
+export interface DbInventoryItem {
+  id: string;
+  hospitalId: string;
+  drugId: string;
+  batchNo: string | null;
+  expiryDate: string | null;
+  quantityOnHand: number;
+  reorderLevel: number;
+  unitCost: number | null;
+  unitPrice: number | null;
+  Drug?: DbDrug;
+}
+
+export interface DbVitals {
+  id: string;
+  encounterId: string;
+  recordedAt: string;
+  temperatureC: number | null;
+  pulseBpm: number | null;
+  respRateBpm: number | null;
+  bloodPressureSys: number | null;
+  bloodPressureDia: number | null;
+  spo2Percent: number | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  bmi: number | null;
+  painScore: number | null;
+}
+
+export interface DbEncounter {
+  id: string;
+  hospitalId: string;
+  patientId: string;
+  doctorId: string;
+  appointmentId: string | null;
+  admissionId: string | null;
+  encounterType: string;
+  chiefComplaint: string | null;
+  historyOfPresentIllness: string | null;
+  examinationFindings: string | null;
+  diagnosis: string | null;
+  diagnosisIcd10: string | null;
+  plan: string | null;
+  followUpDate: string | null;
+  notes: string | null;
+  signedAt: string | null;
+  createdAt: string;
+  Patient?: DbPatient;
+  User?: DbUser;
+  Vitals?: DbVitals[];
+}
+
+export interface DbPrescriptionItem {
+  id: string;
+  prescriptionId: string;
+  drugId: string;
+  dose: string | null;
+  frequency: string | null;
+  route: string | null;
+  durationDays: number | null;
+  instructions: string | null;
+  quantity: number | null;
+  Drug?: DbDrug;
+}
+
+export interface DbPrescription {
+  id: string;
+  encounterId: string;
+  createdAt: string;
+  notes: string | null;
+  PrescriptionItem?: DbPrescriptionItem[];
+}

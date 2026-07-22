@@ -1,72 +1,73 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session } from './types';
-import { mockUsers } from './mock-data';
+import { supabase } from './supabase/client';
+import type { DbUser } from './supabase/types';
 
 interface AuthContextType {
-  session: Session | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
-  user: User | null;
+  user: DbUser | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<DbUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load session from localStorage on mount
-  useEffect(() => {
-    const savedSession = localStorage.getItem('hospital_session');
-    if (savedSession) {
-      try {
-        setSession(JSON.parse(savedSession));
-      } catch (error) {
-        localStorage.removeItem('hospital_session');
-      }
+  const loadProfile = async (authUserId: string) => {
+    const { data, error } = await supabase
+      .from('User')
+      .select('*')
+      .eq('id', authUserId)
+      .single();
+    if (!error && data) {
+      setUser(data as DbUser);
     }
-    setLoading(false);
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadProfile(session.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const user = mockUsers.find(
-      (u) => u.email === email && u.password === password
-    );
-
-    if (!user) {
-      throw new Error('Invalid email or password');
-    }
-
-    const newSession: Session = {
-      user,
-      token: `token_${Date.now()}`,
-    };
-
-    setSession(newSession);
-    localStorage.setItem('hospital_session', JSON.stringify(newSession));
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    if (data.user) await loadProfile(data.user.id);
   };
 
   const logout = () => {
-    setSession(null);
-    localStorage.removeItem('hospital_session');
+    supabase.auth.signOut();
+    setUser(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        session,
         loading,
         login,
         logout,
-        isAuthenticated: session !== null,
-        user: session?.user || null,
+        isAuthenticated: user !== null,
+        user,
       }}
     >
       {children}

@@ -1,29 +1,32 @@
 'use client';
 
-import { mockAppointments, mockPatients, mockDoctors } from '@/lib/mock-data';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import type { DbAppointment } from '@/lib/supabase/types';
 
 export function RecentAppointments() {
-  const recent = mockAppointments.slice(0, 5);
+  const [recent, setRecent] = useState<DbAppointment[]>([]);
 
-  const getPatientName = (patientId: string) => {
-    const patient = mockPatients.find((p) => p.id === patientId);
-    return patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown';
-  };
-
-  const getDoctorName = (doctorId: string) => {
-    const doctor = mockDoctors.find((d) => d.id === doctorId);
-    return doctor ? `Dr. ${doctor.lastName}` : 'Unknown';
-  };
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('Appointment')
+        .select('*, Patient(fullName), User(fullName)')
+        .order('scheduledAt', { ascending: false })
+        .limit(5);
+      if (data) setRecent(data as any);
+    })();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled':
+      case 'SCHEDULED':
+      case 'CHECKED_IN':
         return 'from-cyan-600/40 to-cyan-500/20 border-cyan-400/50 text-cyan-200';
-      case 'completed':
+      case 'COMPLETED':
         return 'from-emerald-600/40 to-emerald-500/20 border-emerald-400/50 text-emerald-200';
-      case 'cancelled':
+      case 'CANCELLED':
+      case 'NO_SHOW':
         return 'from-red-600/40 to-red-500/20 border-red-400/50 text-red-200';
       default:
         return 'from-gray-600/40 to-gray-500/20 border-gray-400/50 text-gray-200';
@@ -40,14 +43,14 @@ export function RecentAppointments() {
           recent.map((apt) => (
             <div key={apt.id} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-white/5 to-white/10 border border-white/10 hover:border-white/20 hover:bg-gradient-to-r hover:from-white/10 hover:to-white/15 transition-all duration-300 group">
               <div className="flex-1">
-                <p className="font-semibold text-white text-sm">{getPatientName(apt.patientId)}</p>
+                <p className="font-semibold text-white text-sm">{apt.Patient?.fullName || 'Unknown'}</p>
                 <p className="text-xs text-gray-400">
-                  {apt.appointmentDate} at {apt.appointmentTime}
+                  {new Date(apt.scheduledAt).toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-300 mt-1">{getDoctorName(apt.doctorId)}</p>
+                <p className="text-xs text-gray-300 mt-1">Dr. {apt.User?.fullName?.replace('Dr. ', '') || 'Unassigned'}</p>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-lg bg-gradient-to-r ${getStatusColor(apt.status)} border`}>
-                {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+                {apt.status.replace('_', ' ')}
               </div>
             </div>
           ))

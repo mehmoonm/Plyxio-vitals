@@ -22,8 +22,8 @@ export function Header() {
           <User className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-white">{user?.name}</h2>
-          <p className="text-xs text-gray-400 capitalize font-medium">{user?.role.toUpperCase()}</p>
+          <h2 className="text-lg font-semibold text-white">{user?.fullName}</h2>
+          <p className="text-xs text-gray-400 capitalize font-medium">{user?.role?.replace('_', ' ')}</p>
         </div>
       </div>
 

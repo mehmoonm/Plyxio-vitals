@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@hospital.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('admin@plyxio-demo.pk');
+  const [password, setPassword] = useState('Plyxio@2026');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -102,38 +102,32 @@ export default function LoginPage() {
 
           {/* Demo Credentials */}
           <div className="pt-4 border-t border-white/10">
-            <p className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-widest">Demo Credentials</p>
+            <p className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-widest">Demo Credentials (PLYXIO HMS)</p>
             <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="text-left">
-                  <p className="text-gray-200 font-medium group-hover:text-indigo-400 transition-colors">Admin</p>
-                  <p className="text-gray-400 text-xs">admin@hospital.com</p>
-                </div>
-                <span className="text-gray-500 group-hover:text-gray-300">→</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="text-left">
-                  <p className="text-gray-200 font-medium group-hover:text-cyan-400 transition-colors">Doctor</p>
-                  <p className="text-gray-400 text-xs">dr.smith@hospital.com</p>
-                </div>
-                <span className="text-gray-500 group-hover:text-gray-300">→</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="text-left">
-                  <p className="text-gray-200 font-medium group-hover:text-purple-400 transition-colors">Patient</p>
-                  <p className="text-gray-400 text-xs">john@example.com</p>
-                </div>
-                <span className="text-gray-500 group-hover:text-gray-300">→</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group">
-                <div className="text-left">
-                  <p className="text-gray-200 font-medium group-hover:text-pink-400 transition-colors">Staff</p>
-                  <p className="text-gray-400 text-xs">nurse1@hospital.com</p>
-                </div>
-                <span className="text-gray-500 group-hover:text-gray-300">→</span>
-              </div>
+              {[
+                { role: 'Hospital Admin', email: 'admin@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Doctor', email: 'doctor@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Nurse', email: 'nurse@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Receptionist', email: 'reception@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Pharmacist', email: 'pharmacy@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Lab Technician', email: 'lab@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Radiologist', email: 'radiology@plyxio-demo.pk', pass: 'Plyxio@2026' },
+                { role: 'Billing Clerk', email: 'billing@plyxio-demo.pk', pass: 'Plyxio@2026' },
+              ].map((cred) => (
+                <button
+                  type="button"
+                  key={cred.email}
+                  onClick={() => { setEmail(cred.email); setPassword(cred.pass); }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group text-left"
+                >
+                  <div>
+                    <p className="text-gray-200 font-medium group-hover:text-indigo-400 transition-colors">{cred.role}</p>
+                    <p className="text-gray-400 text-xs">{cred.email}</p>
+                  </div>
+                  <span className="text-gray-500 group-hover:text-gray-300">→</span>
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-gray-400 mt-3 text-center">Password: role123 (e.g., admin123, doctor123)</p>
           </div>
         </div>
       </div>
