@@ -67,3 +67,8 @@ export function canManageWards(role?: Role | null) {
 export function canDispense(role?: Role | null) {
   return !!role && [...ADMIN, 'PHARMACIST'].includes(role);
 }
+
+// Matches the DB's patdoc_write policy
+export function canManageDocuments(role?: Role | null) {
+  return !!role && [...ADMIN, 'DOCTOR', 'NURSE', 'RECEPTIONIST'].includes(role);
+}

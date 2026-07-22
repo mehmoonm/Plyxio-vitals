@@ -1,19 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth-context';
+import { canManageDocuments } from '@/lib/permissions';
 import type { DbPatient } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Mail, MapPin, Heart, AlertCircle, Users, Stethoscope } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, MapPin, Heart, AlertCircle, Users, Stethoscope, FileText, Upload, Trash2, Download } from 'lucide-react';
 
 export default function PatientDetailPage() {
   const params = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [patient, setPatient] = useState<DbPatient | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [docError, setDocError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadDocuments = async () => {
+    const { data } = await supabase.from('PatientDocument').select('*').eq('patientId', params.id).order('uploadedAt', { ascending: false });
+    setDocuments(data || []);
+  };
 
   useEffect(() => {
     (async () => {
@@ -23,9 +35,45 @@ export default function PatientDetailPage() {
       ]);
       setPatient(p.data as DbPatient);
       setEncounters(enc.data || []);
+      await loadDocuments();
       setLoading(false);
     })();
   }, [params.id]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.hospitalId) return;
+    setUploading(true);
+    setDocError('');
+
+    const path = `${user.hospitalId}/${params.id}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage.from('patient-documents').upload(path, file);
+    if (uploadError) { setDocError(uploadError.message); setUploading(false); return; }
+
+    const { error: insertError } = await supabase.from('PatientDocument').insert({
+      patientId: params.id,
+      title: file.name,
+      fileUrl: path,
+      category: 'General',
+      uploadedAt: new Date().toISOString(),
+    });
+    setUploading(false);
+    if (insertError) { setDocError(insertError.message); return; }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    await loadDocuments();
+  };
+
+  const handleView = async (doc: any) => {
+    const { data, error } = await supabase.storage.from('patient-documents').createSignedUrl(doc.fileUrl, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    else setDocError(error?.message || 'Could not open document');
+  };
+
+  const handleDelete = async (doc: any) => {
+    await supabase.storage.from('patient-documents').remove([doc.fileUrl]);
+    await supabase.from('PatientDocument').delete().eq('id', doc.id);
+    await loadDocuments();
+  };
 
   if (loading) {
     return <div className="text-gray-400">Loading…</div>;
@@ -153,6 +201,48 @@ export default function PatientDetailPage() {
                     <p className="text-xs text-slate-400 mt-1">Dr. {enc.User?.fullName}</p>
                   </div>
                 </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="pt-6 border-t border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-400" />
+              Documents
+            </h2>
+            {canManageDocuments(user?.role) && (
+              <>
+                <input ref={fileInputRef} type="file" onChange={handleUpload} className="hidden" />
+                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} variant="outline" size="sm" className="gap-2 border-indigo-500/50 text-indigo-300 hover:bg-indigo-600/20">
+                  <Upload className="w-4 h-4" />{uploading ? 'Uploading...' : 'Upload'}
+                </Button>
+              </>
+            )}
+          </div>
+          {docError && <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-lg text-sm mb-3">{docError}</div>}
+          {documents.length === 0 ? (
+            <p className="text-slate-400 text-sm">No documents uploaded yet</p>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div key={doc.id} className="bg-white/5 rounded-lg px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-white text-sm font-medium">{doc.title}</p>
+                    <p className="text-xs text-slate-400">{doc.category} • {new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleView(doc)} className="p-2 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300" title="View">
+                      <Download className="w-4 h-4" />
+                    </button>
+                    {canManageDocuments(user?.role) && (
+                      <button onClick={() => handleDelete(doc)} className="p-2 rounded-lg bg-red-600/30 hover:bg-red-600/50 text-red-300" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}

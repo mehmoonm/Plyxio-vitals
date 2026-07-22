@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { canManageAdmissions, canManageBeds } from '@/lib/permissions';
+import { logAudit } from '@/lib/audit-log';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, LogOut, NotebookPen } from 'lucide-react';
@@ -69,6 +70,15 @@ export default function AdmissionDetailPage() {
 
     const { error: bedError } = await supabase.from('Bed').update({ status: 'CLEANING' }).eq('id', admission.bedId);
     if (bedError) { setError(`Discharged, but failed to free the bed: ${bedError.message}`); setDischarging(false); return; }
+
+    logAudit({
+      hospitalId: user?.hospitalId,
+      userId: user?.id,
+      action: 'PATIENT_DISCHARGED',
+      entityType: 'Admission',
+      entityId: params.id as string,
+      metadata: { patientName: admission.Patient?.fullName },
+    });
 
     setDischarging(false);
     await load();

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
+import { logAudit } from '@/lib/audit-log';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -35,7 +36,7 @@ export default function NewStaffPage() {
     // Creates the staff profile row. Login access (Supabase Auth) must be
     // set up separately by an admin via the Supabase dashboard — this only
     // creates the directory/profile entry.
-    const { error: insertError } = await supabase.from('User').insert({
+    const { data: newStaff, error: insertError } = await supabase.from('User').insert({
       hospitalId: user?.hospitalId,
       fullName: form.fullName,
       email: form.email,
@@ -45,13 +46,21 @@ export default function NewStaffPage() {
       licenseNo: form.licenseNo || null,
       passwordHash: 'PENDING_INVITE',
       isActive: true,
-    });
+    }).select().single();
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return;
     }
+    logAudit({
+      hospitalId: user?.hospitalId,
+      userId: user?.id,
+      action: 'STAFF_CREATED',
+      entityType: 'User',
+      entityId: newStaff?.id,
+      metadata: { fullName: form.fullName, role: form.role },
+    });
     router.push(form.role === 'DOCTOR' ? '/dashboard/doctors' : '/dashboard/staff');
   };
 

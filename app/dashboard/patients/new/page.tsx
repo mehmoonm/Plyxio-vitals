@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
+import { logAudit } from '@/lib/audit-log';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -32,18 +33,26 @@ export default function NewPatientPage() {
     setError('');
 
     const mrn = `MRN-${Date.now().toString().slice(-8)}`;
-    const { error: insertError } = await supabase.from('Patient').insert({
+    const { data: newPatient, error: insertError } = await supabase.from('Patient').insert({
       hospitalId: user?.hospitalId,
       mrn,
       ...formData,
       dateOfBirth: formData.dateOfBirth || null,
-    });
+    }).select().single();
 
     setLoading(false);
     if (insertError) {
       setError(insertError.message);
       return;
     }
+    logAudit({
+      hospitalId: user?.hospitalId,
+      userId: user?.id,
+      action: 'PATIENT_CREATED',
+      entityType: 'Patient',
+      entityId: newPatient?.id,
+      metadata: { fullName: formData.fullName, mrn },
+    });
     router.push('/dashboard/patients');
   };
 

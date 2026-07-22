@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useSettings } from '@/lib/settings-context';
 import { canManageBilling } from '@/lib/permissions';
 import { generateInvoicePdf } from '@/lib/pdf/invoice-pdf';
+import { logAudit } from '@/lib/audit-log';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,15 @@ export default function InvoiceDetailPage() {
     });
 
     if (payError) { setError(payError.message); setBusy(false); return; }
+
+    logAudit({
+      hospitalId: user?.hospitalId,
+      userId: user?.id,
+      action: 'PAYMENT_RECORDED',
+      entityType: 'Invoice',
+      entityId: params.id as string,
+      metadata: { amount, method: paymentMethod },
+    });
 
     const newAmountPaid = Number(invoice.amountPaid) + amount;
     const newStatus = newAmountPaid >= Number(invoice.total) ? 'PAID' : 'PARTIALLY_PAID';

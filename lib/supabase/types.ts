@@ -192,6 +192,28 @@ export interface DbDispense {
   DispenseItem?: DbDispenseItem[];
 }
 
+export interface DbPatientDocument {
+  id: string;
+  patientId: string;
+  title: string;
+  fileUrl: string;
+  category: string | null;
+  uploadedAt: string;
+}
+
+export interface DbAuditLog {
+  id: string;
+  hospitalId: string | null;
+  userId: string | null;
+  action: string;
+  entityType: string | null;
+  entityId: string | null;
+  metadata: Record<string, any> | null;
+  ipAddress: string | null;
+  createdAt: string;
+  User?: DbUser;
+}
+
 export interface DbWard {
   id: string;
   hospitalId: string;
