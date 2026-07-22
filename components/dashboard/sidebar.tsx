@@ -17,6 +17,7 @@ import {
   BedDouble,
   FlaskConical,
   Scan,
+  Pill,
 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
 import { useModules, type ModuleKey } from '@/lib/hospital-modules-context';
@@ -33,6 +34,7 @@ const adminMenuItems: MenuItem[] = [
   { href: '/dashboard/doctors', label: 'Doctors', icon: Stethoscope },
   { href: '/dashboard/billing', label: 'Billing', icon: FileText, moduleKey: 'billing' },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
+  { href: '/dashboard/pharmacy', label: 'Pharmacy', icon: Pill, moduleKey: 'inventory' },
   { href: '/dashboard/staff', label: 'Staff', icon: UserCheck },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -60,6 +62,7 @@ const staffMenuItems: MenuItem[] = [
   { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical, moduleKey: 'lab' },
   { href: '/dashboard/radiology', label: 'Radiology', icon: Scan, moduleKey: 'radiology' },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
+  { href: '/dashboard/pharmacy', label: 'Pharmacy', icon: Pill, moduleKey: 'inventory' },
 ];
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {

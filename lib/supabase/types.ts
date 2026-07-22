@@ -161,6 +161,35 @@ export interface DbPrescription {
   createdAt: string;
   notes: string | null;
   PrescriptionItem?: DbPrescriptionItem[];
+  Encounter?: { patientId: string; Patient?: DbPatient };
+  Dispense?: DbDispense[];
+}
+
+export interface DbStockTransaction {
+  id: string;
+  inventoryItemId: string;
+  type: 'RECEIVE' | 'DISPENSE' | 'ADJUSTMENT' | 'RETURN' | 'EXPIRED_WRITE_OFF';
+  quantity: number;
+  reference: string | null;
+  performedById: string | null;
+  createdAt: string;
+}
+
+export interface DbDispenseItem {
+  id: string;
+  dispenseId: string;
+  inventoryItemId: string;
+  quantity: number;
+  InventoryItem?: DbInventoryItem;
+}
+
+export interface DbDispense {
+  id: string;
+  prescriptionId: string;
+  dispensedById: string;
+  dispensedAt: string;
+  User?: DbUser;
+  DispenseItem?: DbDispenseItem[];
 }
 
 export interface DbWard {

@@ -62,3 +62,8 @@ export function canManageBeds(role?: Role | null) {
 export function canManageWards(role?: Role | null) {
   return isAdmin(role);
 }
+
+// Matches the DB's dispense_write/dispenseitem_write/stocktxn_write policies
+export function canDispense(role?: Role | null) {
+  return !!role && [...ADMIN, 'PHARMACIST'].includes(role);
+}
