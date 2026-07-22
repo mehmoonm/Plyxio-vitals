@@ -207,3 +207,66 @@ export interface DbNursingNote {
   recordedAt: string;
   User?: DbUser;
 }
+
+export interface DbLabTestCatalog {
+  id: string;
+  hospitalId: string;
+  name: string;
+  code: string | null;
+  sampleType: string | null;
+  price: number | null;
+  normalRange: string | null;
+}
+
+export interface DbLabOrderItem {
+  id: string;
+  labOrderId: string;
+  labTestId: string;
+  result: string | null;
+  resultUnit: string | null;
+  isAbnormal: boolean | null;
+  resultNotes: string | null;
+  resultedAt: string | null;
+  resultedById: string | null;
+  LabTestCatalog?: DbLabTestCatalog;
+}
+
+export interface DbLabOrder {
+  id: string;
+  hospitalId: string;
+  patientId: string;
+  encounterId: string | null;
+  orderedById: string;
+  status: 'ORDERED' | 'SAMPLE_COLLECTED' | 'IN_PROGRESS' | 'RESULT_READY' | 'CANCELLED';
+  orderedAt: string;
+  priority: string;
+  Patient?: DbPatient;
+  User?: DbUser;
+  LabOrderItem?: DbLabOrderItem[];
+}
+
+export interface DbRadiologyReport {
+  id: string;
+  radiologyOrderId: string;
+  findings: string | null;
+  impression: string | null;
+  imageUrl: string | null;
+  reportedById: string | null;
+  reportedAt: string;
+}
+
+export interface DbRadiologyOrder {
+  id: string;
+  hospitalId: string;
+  patientId: string;
+  encounterId: string | null;
+  orderedById: string;
+  studyType: string;
+  bodyPart: string | null;
+  status: 'ORDERED' | 'SAMPLE_COLLECTED' | 'IN_PROGRESS' | 'RESULT_READY' | 'CANCELLED';
+  priority: string;
+  orderedAt: string;
+  Patient?: DbPatient;
+  User?: DbUser;
+  RadiologyReport?: DbRadiologyReport[];
+}
