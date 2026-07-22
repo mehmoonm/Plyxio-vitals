@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePatientAuth } from '@/lib/patient-auth-context';
+import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase/client';
+import { generateInvoicePdf } from '@/lib/pdf/invoice-pdf';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard } from 'lucide-react';
+import { ArrowLeft, CreditCard, Download } from 'lucide-react';
 
 const METHODS = [
   { value: 'JAZZCASH', label: 'JazzCash' },
@@ -19,6 +21,7 @@ const METHODS = [
 export default function PortalInvoiceDetailPage() {
   const params = useParams<{ id: string }>();
   const { patient } = usePatientAuth();
+  const { settings } = useSettings();
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState('JAZZCASH');
@@ -59,14 +62,40 @@ export default function PortalInvoiceDetailPage() {
     setBusy(false);
   };
 
+  const downloadPdf = () => {
+    if (!invoice) return;
+    generateInvoicePdf({
+      hospitalName: settings.hospitalName,
+      invoiceNo: invoice.invoiceNo,
+      createdAt: invoice.createdAt,
+      status: invoice.status,
+      patientName: patient?.fullName || 'Unknown',
+      patientMrn: patient?.mrn || '',
+      items: (invoice.InvoiceItem || []).map((it: any) => ({
+        description: it.description,
+        quantity: it.quantity,
+        unitPrice: Number(it.unitPrice),
+        amount: Number(it.amount),
+      })),
+      subtotal: Number(invoice.subtotal),
+      discount: Number(invoice.discount),
+      tax: Number(invoice.tax),
+      total: Number(invoice.total),
+      amountPaid: Number(invoice.amountPaid),
+    });
+  };
+
   if (loading) return <p className="text-gray-400">Loading…</p>;
   if (!invoice) return <p className="text-gray-400">Invoice not found</p>;
 
   return (
     <div className="space-y-6">
-      <Link href="/portal/billing">
-        <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Billing</Button>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/portal/billing">
+          <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Billing</Button>
+        </Link>
+        <Button onClick={downloadPdf} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download PDF</Button>
+      </div>
 
       <div className="glass-card rounded-2xl p-8 space-y-6">
         <div className="flex items-start justify-between">

@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import { useSettings } from '@/lib/settings-context';
+import { generatePrescriptionPdf } from '@/lib/pdf/prescription-pdf';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 
 export default function EncounterDetailPage() {
   const params = useParams<{ id: string }>();
+  const { settings } = useSettings();
   const [encounter, setEncounter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +19,7 @@ export default function EncounterDetailPage() {
     (async () => {
       const { data } = await supabase
         .from('Encounter')
-        .select('*, Patient(fullName, mrn), User(fullName), Vitals(*), Prescription(*, PrescriptionItem(*, Drug(name, strength)))')
+        .select('*, Patient(fullName, mrn), User(fullName, specialty), Vitals(*), Prescription(*, PrescriptionItem(*, Drug(name, strength)))')
         .eq('id', params.id)
         .single();
       setEncounter(data);
@@ -28,12 +31,43 @@ export default function EncounterDetailPage() {
   if (!encounter) return <div className="text-gray-500">Encounter not found</div>;
 
   const vitals = encounter.Vitals?.[0];
+  const hasPrescription = encounter.Prescription?.length > 0;
+
+  const downloadPdf = () => {
+    const items = encounter.Prescription.flatMap((rx: any) => rx.PrescriptionItem || []).map((item: any) => ({
+      drugName: item.Drug?.name || 'Unknown',
+      strength: item.Drug?.strength,
+      dose: item.dose,
+      frequency: item.frequency,
+      durationDays: item.durationDays,
+      quantity: item.quantity,
+      instructions: item.instructions,
+    }));
+
+    generatePrescriptionPdf({
+      hospitalName: settings.hospitalName,
+      patientName: encounter.Patient?.fullName || 'Unknown',
+      patientMrn: encounter.Patient?.mrn || '',
+      doctorName: encounter.User?.fullName || 'Unknown',
+      doctorSpecialty: encounter.User?.specialty,
+      date: encounter.createdAt,
+      diagnosis: encounter.diagnosis,
+      chiefComplaint: encounter.chiefComplaint,
+      plan: encounter.plan,
+      items,
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard/appointments">
-        <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back</Button>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/dashboard/appointments">
+          <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back</Button>
+        </Link>
+        {hasPrescription && (
+          <Button onClick={downloadPdf} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download Prescription</Button>
+        )}
+      </div>
 
       <div className="bg-white rounded-2xl border p-8 space-y-6">
         <div>

@@ -5,15 +5,18 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
+import { useSettings } from '@/lib/settings-context';
 import { canManageBilling } from '@/lib/permissions';
+import { generateInvoicePdf } from '@/lib/pdf/invoice-pdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, DollarSign } from 'lucide-react';
+import { ArrowLeft, DollarSign, Download } from 'lucide-react';
 
 export default function InvoiceDetailPage() {
   const params = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [invoice, setInvoice] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +62,28 @@ export default function InvoiceDetailPage() {
     setBusy(false);
   };
 
+  const downloadPdf = () => {
+    generateInvoicePdf({
+      hospitalName: settings.hospitalName,
+      invoiceNo: invoice.invoiceNo,
+      createdAt: invoice.createdAt,
+      status: invoice.status,
+      patientName: invoice.Patient?.fullName || 'Unknown',
+      patientMrn: invoice.Patient?.mrn || '',
+      items: (invoice.InvoiceItem || []).map((it: any) => ({
+        description: it.description,
+        quantity: it.quantity,
+        unitPrice: Number(it.unitPrice),
+        amount: Number(it.amount),
+      })),
+      subtotal: Number(invoice.subtotal),
+      discount: Number(invoice.discount),
+      tax: Number(invoice.tax),
+      total: Number(invoice.total),
+      amountPaid: Number(invoice.amountPaid),
+    });
+  };
+
   if (loading) return <div className="text-gray-500">Loading…</div>;
   if (!invoice) return <div className="text-gray-500">Invoice not found</div>;
 
@@ -66,9 +91,12 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard/billing">
-        <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Billing</Button>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/dashboard/billing">
+          <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Billing</Button>
+        </Link>
+        <Button onClick={downloadPdf} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download PDF</Button>
+      </div>
 
       <div className="bg-white rounded-2xl border p-8 space-y-6">
         <div className="flex items-start justify-between">
