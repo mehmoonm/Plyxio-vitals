@@ -2,20 +2,44 @@
 
 import { useState, useRef } from 'react';
 import { useSettings } from '@/lib/settings-context';
+import { useAuth } from '@/lib/auth-context';
+import { useModules, type ModuleKey } from '@/lib/hospital-modules-context';
+import { isAdmin } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Upload, RotateCcw, Moon, Sun, Monitor } from 'lucide-react';
+import { ArrowLeft, Upload, RotateCcw, Moon, Sun, Monitor, BedDouble, FlaskConical, Scan, Package, FileText, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+
+const MODULE_LIST: { key: ModuleKey; label: string; description: string; icon: any }[] = [
+  { key: 'admissions', label: 'Admissions & Beds', description: 'Ward/bed management, patient admission and discharge', icon: BedDouble },
+  { key: 'lab', label: 'Lab Orders', description: 'Order diagnostic tests and record results', icon: FlaskConical },
+  { key: 'radiology', label: 'Radiology', description: 'Order imaging studies and radiology reports', icon: Scan },
+  { key: 'inventory', label: 'Inventory', description: 'Pharmacy stock and drug inventory tracking', icon: Package },
+  { key: 'billing', label: 'Billing', description: 'Invoices and payment collection', icon: FileText },
+  { key: 'messaging', label: 'Patient Messaging', description: 'Lets patients message doctors through the portal', icon: MessageCircle },
+];
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
+  const { user } = useAuth();
+  const { modules, updateModules, loading: modulesLoading } = useModules();
   const [primaryColor, setPrimaryColor] = useState(settings.primaryColor);
   const [accentColor, setAccentColor] = useState(settings.accentColor);
   const [hospitalName, setHospitalName] = useState(settings.hospitalName);
   const [logo, setLogo] = useState<string | null>(settings.logo);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(settings.theme);
   const [saved, setSaved] = useState(false);
+  const [moduleSaving, setModuleSaving] = useState<ModuleKey | null>(null);
+  const [moduleError, setModuleError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleModule = async (key: ModuleKey) => {
+    setModuleSaving(key);
+    setModuleError('');
+    const { error } = await updateModules({ [key]: !modules[key] });
+    if (error) setModuleError(error);
+    setModuleSaving(null);
+  };
 
   const handleSave = () => {
     updateSettings({
@@ -220,6 +244,37 @@ export default function SettingsPage() {
               <p className="text-xs text-slate-400">Supported formats: PNG, JPG, SVG (Max 5MB)</p>
             </div>
           </div>
+
+          {/* Modules */}
+          {isAdmin(user?.role) && (
+            <div className="glass-card rounded-2xl p-6 space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-white">Modules</h2>
+                <p className="text-sm text-slate-400 mt-1">Turn features on or off for your hospital. Disabled modules disappear from every staff member's sidebar.</p>
+              </div>
+              {moduleError && <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-lg text-sm">{moduleError}</div>}
+              <div className="space-y-2">
+                {MODULE_LIST.map(({ key, label, description, icon: Icon }) => (
+                  <div key={key} className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-5 h-5 text-indigo-300 flex-shrink-0" />
+                      <div>
+                        <p className="text-white text-sm font-medium">{label}</p>
+                        <p className="text-xs text-slate-400">{description}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => toggleModule(key)}
+                      disabled={modulesLoading || moduleSaving === key}
+                      className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 disabled:opacity-50 ${modules[key] !== false ? 'bg-indigo-600' : 'bg-gray-500/50'}`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${modules[key] !== false ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Preview */}

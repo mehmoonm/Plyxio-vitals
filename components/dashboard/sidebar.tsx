@@ -19,56 +19,62 @@ import {
   Scan,
 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
+import { useModules, type ModuleKey } from '@/lib/hospital-modules-context';
 
-const adminMenuItems = [
+type MenuItem = { href: string; label: string; icon: any; moduleKey?: ModuleKey };
+
+const adminMenuItems: MenuItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/patients', label: 'Patients', icon: Users },
   { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { href: '/dashboard/admissions', label: 'Admissions', icon: BedDouble },
-  { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical },
-  { href: '/dashboard/radiology', label: 'Radiology', icon: Scan },
+  { href: '/dashboard/admissions', label: 'Admissions', icon: BedDouble, moduleKey: 'admissions' },
+  { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical, moduleKey: 'lab' },
+  { href: '/dashboard/radiology', label: 'Radiology', icon: Scan, moduleKey: 'radiology' },
   { href: '/dashboard/doctors', label: 'Doctors', icon: Stethoscope },
-  { href: '/dashboard/billing', label: 'Billing', icon: FileText },
-  { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
+  { href: '/dashboard/billing', label: 'Billing', icon: FileText, moduleKey: 'billing' },
+  { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
   { href: '/dashboard/staff', label: 'Staff', icon: UserCheck },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
-const doctorMenuItems = [
+const doctorMenuItems: MenuItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { href: '/dashboard/admissions', label: 'Admissions', icon: BedDouble },
-  { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical },
-  { href: '/dashboard/radiology', label: 'Radiology', icon: Scan },
+  { href: '/dashboard/admissions', label: 'Admissions', icon: BedDouble, moduleKey: 'admissions' },
+  { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical, moduleKey: 'lab' },
+  { href: '/dashboard/radiology', label: 'Radiology', icon: Scan, moduleKey: 'radiology' },
   { href: '/dashboard/patients', label: 'Patients', icon: Users },
-  { href: '/dashboard/messages', label: 'Messages', icon: MessageCircle },
+  { href: '/dashboard/messages', label: 'Messages', icon: MessageCircle, moduleKey: 'messaging' },
 ];
 
-const patientMenuItems = [
+const patientMenuItems: MenuItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/appointments', label: 'Appointments', icon: Calendar },
-  { href: '/dashboard/billing', label: 'Billing', icon: FileText },
+  { href: '/dashboard/billing', label: 'Billing', icon: FileText, moduleKey: 'billing' },
 ];
 
-const staffMenuItems = [
+const staffMenuItems: MenuItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/patients', label: 'Patients', icon: Users },
-  { href: '/dashboard/admissions', label: 'Admissions', icon: BedDouble },
-  { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical },
-  { href: '/dashboard/radiology', label: 'Radiology', icon: Scan },
-  { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
+  { href: '/dashboard/admissions', label: 'Admissions', icon: BedDouble, moduleKey: 'admissions' },
+  { href: '/dashboard/lab', label: 'Lab Orders', icon: FlaskConical, moduleKey: 'lab' },
+  { href: '/dashboard/radiology', label: 'Radiology', icon: Scan, moduleKey: 'radiology' },
+  { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
 ];
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const { settings } = useSettings();
+  const { isEnabled } = useModules();
 
-  let menuItems = [];
+  let menuItems: MenuItem[] = [];
   if (user?.role === 'HOSPITAL_ADMIN' || user?.role === 'SUPER_ADMIN') menuItems = adminMenuItems;
   else if (user?.role === 'DOCTOR') menuItems = doctorMenuItems;
   else if (user?.role === 'RECEPTIONIST') menuItems = patientMenuItems;
   else menuItems = staffMenuItems;
+
+  menuItems = menuItems.filter((item) => !item.moduleKey || isEnabled(item.moduleKey));
 
   return (
     <>
