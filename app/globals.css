@@ -277,7 +277,7 @@
   }
   
   .gradient-primary {
-    @apply bg-gradient-to-r from-indigo-600 to-cyan-500;
+    background-image: linear-gradient(to right, var(--primary, #6366f1), var(--accent, #06b6d4));
   }
   
   .gradient-accent {
@@ -328,11 +328,15 @@
 }
 
 .sidebar-nav-active {
-  @apply bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/30;
+  background-color: var(--primary, #6366f1);
+  color: white;
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--primary, #6366f1) 30%, transparent);
 }
 
 .light .sidebar-nav-active {
-  @apply bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/30;
+  background-color: var(--primary, #6366f1);
+  color: white;
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--primary, #6366f1) 30%, transparent);
 }
 
 .sidebar-nav-inactive {

@@ -67,12 +67,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setSettings(updated);
     localStorage.setItem('hospitalSettings', JSON.stringify(updated));
     
-    // Apply colors to CSS variables
+    // Apply colors to the actual theme variables the app reads
+    // (--primary / --accent, mapped in globals.css's @theme block and
+    // consumed by the Button component and .gradient-primary class)
     if (newSettings.primaryColor) {
-      document.documentElement.style.setProperty('--primary-custom', newSettings.primaryColor);
+      document.documentElement.style.setProperty('--primary', newSettings.primaryColor);
     }
     if (newSettings.accentColor) {
-      document.documentElement.style.setProperty('--accent-custom', newSettings.accentColor);
+      document.documentElement.style.setProperty('--accent', newSettings.accentColor);
     }
     
     // Apply theme
@@ -84,8 +86,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const resetSettings = () => {
     setSettings(defaultSettings);
     localStorage.removeItem('hospitalSettings');
-    document.documentElement.style.removeProperty('--primary-custom');
-    document.documentElement.style.removeProperty('--accent-custom');
+    document.documentElement.style.removeProperty('--primary');
+    document.documentElement.style.removeProperty('--accent');
     applyTheme(defaultSettings.theme);
   };
 
@@ -95,8 +97,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     <SettingsContext.Provider value={{ settings, updateSettings, resetSettings }}>
       <style>{`
         :root {
-          --primary-custom: ${settings.primaryColor};
-          --accent-custom: ${settings.accentColor};
+          --primary: ${settings.primaryColor};
+          --accent: ${settings.accentColor};
         }
       `}</style>
       {children}
