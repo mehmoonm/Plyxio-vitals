@@ -16,7 +16,7 @@ export default function PortalLoginPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginForm, setLoginForm] = useState({ email: 'patient@plyxio-demo.pk', password: 'Plyxio@2026' });
   const [regForm, setRegForm] = useState({ fullName: '', email: '', phone: '', cnic: '', password: '' });
   const [forgotEmail, setForgotEmail] = useState('');
 
@@ -134,6 +134,21 @@ export default function PortalLoginPage() {
               </Button>
             </form>
           )}
+
+          <div className="pt-4 border-t border-white/10">
+            <p className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-widest">Demo Patient Account</p>
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setLoginForm({ email: 'patient@plyxio-demo.pk', password: 'Plyxio@2026' }); setError(''); setSuccess(''); }}
+              className="w-full flex items-center justify-between p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group text-left"
+            >
+              <div>
+                <p className="text-gray-200 font-medium group-hover:text-indigo-400 transition-colors">Hamza Sheikh</p>
+                <p className="text-gray-400 text-xs">patient@plyxio-demo.pk</p>
+              </div>
+              <span className="text-gray-500 group-hover:text-gray-300">→</span>
+            </button>
+          </div>
 
           <div className="text-center">
             <a href="/login" className="text-xs text-gray-400 hover:text-indigo-300 transition-colors">
