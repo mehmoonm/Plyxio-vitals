@@ -1,4 +1,4 @@
-const CACHE_NAME = 'medicare-shell-v1';
+const CACHE_NAME = 'medicare-shell-v2';
 const SHELL_ASSETS = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -17,8 +17,19 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first for navigation/data requests (this app is data-driven and
-// online-first), falling back to the cached shell only when fully offline.
+// Focus an already-open tab if there is one, otherwise open a new one,
+// when the user taps an appointment reminder notification.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow('/');
+    })
+  );
+});
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 

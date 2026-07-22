@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { ModulesProvider } from '@/lib/hospital-modules-context';
+import { supabase } from '@/lib/supabase/client';
+import { useAppointmentReminders, type UpcomingAppointmentReminder } from '@/lib/use-appointment-reminders';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
+import { NotificationPermissionBanner } from '@/components/notification-permission-banner';
 
 export default function DashboardLayout({
   children,
@@ -14,7 +17,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -27,6 +30,34 @@ export default function DashboardLayout({
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  const fetchUpcoming = useCallback(async (): Promise<UpcomingAppointmentReminder[]> => {
+    if (!user) return [];
+    const windowEnd = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    let query = supabase
+      .from('Appointment')
+      .select('id, scheduledAt, reason, Patient(fullName), User(fullName)')
+      .eq('status', 'SCHEDULED')
+      .lte('scheduledAt', windowEnd)
+      .gte('scheduledAt', new Date().toISOString());
+
+    // Doctors only get reminded about their own patients; other roles
+    // (front desk, nurses, admin) get a heads-up on anything coming up
+    // hospital-wide so they can prep the day.
+    if (user.role === 'DOCTOR') {
+      query = query.eq('doctorId', user.id);
+    }
+
+    const { data } = await query;
+    return (data || []).map((apt: any) => ({
+      id: apt.id,
+      scheduledAt: apt.scheduledAt,
+      title: 'Upcoming Appointment',
+      body: `${apt.Patient?.fullName || 'Patient'} with Dr. ${apt.User?.fullName || 'doctor'} at ${new Date(apt.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+    }));
+  }, [user]);
+
+  useAppointmentReminders(fetchUpcoming);
 
   if (loading) {
     return (
@@ -51,6 +82,7 @@ export default function DashboardLayout({
           <Header onMenuClick={() => setSidebarOpen((v) => !v)} />
           <main className="flex-1 overflow-auto" style={{ backgroundImage: 'var(--main-gradient)' }}>
             <div className="p-4 sm:p-6">
+              <NotificationPermissionBanner />
               {children}
             </div>
           </main>

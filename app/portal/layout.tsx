@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { PatientAuthProvider, usePatientAuth } from '@/lib/patient-auth-context';
+import { supabase } from '@/lib/supabase/client';
+import { useAppointmentReminders, type UpcomingAppointmentReminder } from '@/lib/use-appointment-reminders';
+import { NotificationPermissionBanner } from '@/components/notification-permission-banner';
 import { LayoutDashboard, Calendar, Pill, FileText, Receipt, MessageCircle, LogOut, Menu } from 'lucide-react';
 
 const menuItems = [
@@ -30,6 +33,27 @@ function PortalShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  const fetchUpcoming = useCallback(async (): Promise<UpcomingAppointmentReminder[]> => {
+    if (!patient) return [];
+    const windowEnd = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('Appointment')
+      .select('id, scheduledAt, User(fullName)')
+      .eq('patientId', patient.id)
+      .eq('status', 'SCHEDULED')
+      .lte('scheduledAt', windowEnd)
+      .gte('scheduledAt', new Date().toISOString());
+
+    return (data || []).map((apt: any) => ({
+      id: apt.id,
+      scheduledAt: apt.scheduledAt,
+      title: 'Upcoming Appointment',
+      body: `Your appointment with Dr. ${apt.User?.fullName || 'your doctor'} is at ${new Date(apt.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+    }));
+  }, [patient]);
+
+  useAppointmentReminders(fetchUpcoming);
 
   if (pathname === '/portal/login' || pathname === '/portal/reset-password') return <>{children}</>;
 
@@ -85,7 +109,10 @@ function PortalShell({ children }: { children: React.ReactNode }) {
           <h1 className="text-sm font-bold text-white">MediCare</h1>
           <div className="w-9" />
         </div>
-        <main className="flex-1 overflow-auto p-4 sm:p-8">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-8">
+          <NotificationPermissionBanner />
+          {children}
+        </main>
       </div>
     </div>
   );
