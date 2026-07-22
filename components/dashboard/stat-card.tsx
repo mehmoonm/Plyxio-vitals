@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
@@ -5,11 +6,12 @@ interface StatCardProps {
   value: string | number;
   icon: LucideIcon;
   color: string;
+  href?: string;
 }
 
-export function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl backdrop-blur-2xl bg-gradient-to-br from-white/15 to-white/5 border border-white/20 p-6 hover:border-white/40 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/20">
+export function StatCard({ title, value, icon: Icon, color, href }: StatCardProps) {
+  const content = (
+    <div className="group relative overflow-hidden rounded-2xl backdrop-blur-2xl bg-gradient-to-br from-white/15 to-white/5 border border-white/20 p-6 hover:border-white/40 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/20 cursor-pointer">
       {/* Gradient overlay on hover */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
         <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-5`}></div>
@@ -28,4 +30,9 @@ export function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }

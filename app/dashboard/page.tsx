@@ -71,14 +71,14 @@ export default function DashboardPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <StatCard title="Total Patients" value={stats.totalPatients} icon={Users} color="from-indigo-600 to-indigo-500" />
-            <StatCard title="Total Appointments" value={stats.totalAppointments} icon={Calendar} color="from-cyan-600 to-cyan-500" />
-            <StatCard title="Total Revenue" value={`Rs ${stats.totalRevenue.toLocaleString()}`} icon={TrendingUp} color="from-purple-600 to-purple-500" />
+            <StatCard title="Total Patients" value={stats.totalPatients} icon={Users} color="from-indigo-600 to-indigo-500" href="/dashboard/patients" />
+            <StatCard title="Total Appointments" value={stats.totalAppointments} icon={Calendar} color="from-cyan-600 to-cyan-500" href="/dashboard/appointments" />
+            <StatCard title="Total Revenue" value={`Rs ${stats.totalRevenue.toLocaleString()}`} icon={TrendingUp} color="from-purple-600 to-purple-500" href="/dashboard/billing" />
             {isAdmin && (
               <>
-                <StatCard title="Total Staff" value={stats.totalStaff} icon={Users} color="from-orange-600 to-orange-500" />
-                <StatCard title="Scheduled Appointments" value={stats.upcomingAppointments} icon={Calendar} color="from-pink-600 to-pink-500" />
-                <StatCard title="Low Inventory Items" value={stats.lowInventoryItems} icon={Package} color="from-amber-600 to-amber-500" />
+                <StatCard title="Total Staff" value={stats.totalStaff} icon={Users} color="from-orange-600 to-orange-500" href="/dashboard/staff" />
+                <StatCard title="Scheduled Appointments" value={stats.upcomingAppointments} icon={Calendar} color="from-pink-600 to-pink-500" href="/dashboard/appointments" />
+                <StatCard title="Low Inventory Items" value={stats.lowInventoryItems} icon={Package} color="from-amber-600 to-amber-500" href="/dashboard/inventory" />
               </>
             )}
           </div>
