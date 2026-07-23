@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { canManageBilling } from '@/lib/permissions';
 import { RoleGuard } from '@/components/dashboard/role-guard';
+import { QuickAddPatientModal } from '@/components/dashboard/quick-add-patient-modal';
 
 interface LineItem {
   description: string;
@@ -24,6 +25,7 @@ export default function NewInvoicePage() {
   const { user } = useAuth();
   const [patients, setPatients] = useState<DbPatient[]>([]);
   const [patientId, setPatientId] = useState('');
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
   const [items, setItems] = useState<LineItem[]>([{ description: '', category: 'Consultation', quantity: 1, unitPrice: 0 }]);
@@ -116,7 +118,12 @@ export default function NewInvoicePage() {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm">{error}</div>}
 
         <div>
-          <label className="text-sm font-semibold text-gray-700 block mb-2">Patient *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-gray-700">Patient *</label>
+            <button type="button" onClick={() => setShowQuickAdd(true)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+              <Plus className="w-3 h-3" />New Patient
+            </button>
+          </div>
           <select value={patientId} onChange={(e) => setPatientId(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300" required>
             <option value="">Select a patient</option>
             {patients.map((p) => <option key={p.id} value={p.id}>{p.fullName} ({p.mrn})</option>)}
@@ -165,6 +172,17 @@ export default function NewInvoicePage() {
           <Save className="w-4 h-4" />{loading ? 'Creating...' : 'Create Invoice'}
         </Button>
       </form>
+
+      {showQuickAdd && (
+        <QuickAddPatientModal
+          onClose={() => setShowQuickAdd(false)}
+          onCreated={(newPatient) => {
+            setPatients((prev) => [...prev, newPatient as any]);
+            setPatientId(newPatient.id);
+            setShowQuickAdd(false);
+          }}
+        />
+      )}
     </div>
     </RoleGuard>
   );

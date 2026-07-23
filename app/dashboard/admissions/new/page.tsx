@@ -7,9 +7,10 @@ import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus } from 'lucide-react';
 import { canManageBeds } from '@/lib/permissions';
 import { RoleGuard } from '@/components/dashboard/role-guard';
+import { QuickAddPatientModal } from '@/components/dashboard/quick-add-patient-modal';
 
 export default function NewAdmissionPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function NewAdmissionPage() {
   const [beds, setBeds] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ patientId: '', bedId: '', attendingDoctorId: '', reasonForAdmission: '' });
 
@@ -79,7 +81,12 @@ export default function NewAdmissionPage() {
         {error && <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-lg text-sm">{error}</div>}
 
         <div>
-          <label className="text-sm font-semibold text-gray-200 block mb-2">Patient *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-gray-200">Patient *</label>
+            <button type="button" onClick={() => setShowQuickAdd(true)} className="text-xs font-semibold text-indigo-300 hover:text-indigo-200 flex items-center gap-1">
+              <Plus className="w-3 h-3" />New Patient
+            </button>
+          </div>
           <select value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} className="glass-input w-full px-4 py-3 rounded-lg text-white">
             <option value="" className="text-black">Select a patient</option>
             {patients.map((p) => <option key={p.id} value={p.id} className="text-black">{p.fullName} ({p.mrn})</option>)}
@@ -112,6 +119,17 @@ export default function NewAdmissionPage() {
           <Save className="w-4 h-4" />{loading ? 'Admitting...' : 'Admit Patient'}
         </Button>
       </form>
+
+      {showQuickAdd && (
+        <QuickAddPatientModal
+          onClose={() => setShowQuickAdd(false)}
+          onCreated={(newPatient) => {
+            setPatients((prev) => [...prev, newPatient as any]);
+            setForm((f) => ({ ...f, patientId: newPatient.id }));
+            setShowQuickAdd(false);
+          }}
+        />
+      )}
     </div>
     </RoleGuard>
   );

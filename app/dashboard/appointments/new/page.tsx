@@ -9,9 +9,10 @@ import type { DbPatient, DbUser } from '@/lib/supabase/types';
 import { generateDaySlots, isSlotInPast } from '@/lib/appointment-slots';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus } from 'lucide-react';
 import { canManageAppointments } from '@/lib/permissions';
 import { RoleGuard } from '@/components/dashboard/role-guard';
+import { QuickAddPatientModal, type QuickPatient } from '@/components/dashboard/quick-add-patient-modal';
 
 export default function NewAppointmentPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function NewAppointmentPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [form, setForm] = useState({
     patientId: '', doctorId: '', date: '', time: '', reason: '',
   });
@@ -109,7 +111,12 @@ export default function NewAppointmentPage() {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm">{error}</div>}
 
         <div>
-          <label className="text-sm font-semibold text-gray-700 block mb-2">Patient *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-gray-700">Patient *</label>
+            <button type="button" onClick={() => setShowQuickAdd(true)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+              <Plus className="w-3 h-3" />New Patient
+            </button>
+          </div>
           <select name="patientId" value={form.patientId} onChange={handleChange} className="w-full px-4 py-3 rounded-lg border border-gray-300" required>
             <option value="">Select a patient</option>
             {patients.map((p) => <option key={p.id} value={p.id}>{p.fullName} ({p.mrn})</option>)}
@@ -171,6 +178,17 @@ export default function NewAppointmentPage() {
           <Save className="w-4 h-4" />{loading ? 'Scheduling...' : 'Schedule Appointment'}
         </Button>
       </form>
+
+      {showQuickAdd && (
+        <QuickAddPatientModal
+          onClose={() => setShowQuickAdd(false)}
+          onCreated={(newPatient) => {
+            setPatients((prev) => [...prev, newPatient as any]);
+            setForm((f) => ({ ...f, patientId: newPatient.id }));
+            setShowQuickAdd(false);
+          }}
+        />
+      )}
     </div>
     </RoleGuard>
   );
