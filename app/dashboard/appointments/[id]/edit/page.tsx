@@ -49,7 +49,7 @@ export default function EditAppointmentPage() {
       .update({ scheduledAt, reason: form.reason || null })
       .eq('id', params.id);
     setLoading(false);
-    if (updateError) { setError(updateError.message); return; }
+    if (updateError) { setError(updateError.code === '23505' ? 'That time is already booked for this doctor — please pick another slot.' : updateError.message); return; }
     router.push(`/dashboard/appointments/${params.id}`);
   };
 
