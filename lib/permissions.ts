@@ -72,3 +72,8 @@ export function canDispense(role?: Role | null) {
 export function canManageDocuments(role?: Role | null) {
   return !!role && [...ADMIN, 'DOCTOR', 'NURSE', 'RECEPTIONIST'].includes(role);
 }
+
+// Matches the DB's allergy_write policy
+export function canManageAllergies(role?: Role | null) {
+  return !!role && [...ADMIN, 'DOCTOR', 'NURSE'].includes(role);
+}

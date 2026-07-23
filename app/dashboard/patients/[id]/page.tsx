@@ -5,11 +5,11 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
-import { canManageDocuments } from '@/lib/permissions';
+import { canManageDocuments, canManageAllergies } from '@/lib/permissions';
 import type { DbPatient } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Mail, MapPin, Heart, AlertCircle, Users, Stethoscope, FileText, Upload, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, Edit, Mail, MapPin, Heart, AlertCircle, Users, Stethoscope, FileText, Upload, Trash2, Download, Plus } from 'lucide-react';
 
 export default function PatientDetailPage() {
   const params = useParams<{ id: string }>();
@@ -17,6 +17,10 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState<DbPatient | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [allergies, setAllergies] = useState<any[]>([]);
+  const [showAllergyForm, setShowAllergyForm] = useState(false);
+  const [allergyForm, setAllergyForm] = useState({ substance: '', reaction: '', severity: 'MILD' });
+  const [allergyError, setAllergyError] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [docError, setDocError] = useState('');
@@ -25,6 +29,33 @@ export default function PatientDetailPage() {
   const loadDocuments = async () => {
     const { data } = await supabase.from('PatientDocument').select('*').eq('patientId', params.id).order('uploadedAt', { ascending: false });
     setDocuments(data || []);
+  };
+
+  const loadAllergies = async () => {
+    const { data } = await supabase.from('Allergy').select('*').eq('patientId', params.id).order('notedAt', { ascending: false });
+    setAllergies(data || []);
+  };
+
+  const addAllergy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!allergyForm.substance.trim()) return;
+    setAllergyError('');
+    const { error } = await supabase.from('Allergy').insert({
+      patientId: params.id,
+      substance: allergyForm.substance.trim(),
+      reaction: allergyForm.reaction || null,
+      severity: allergyForm.severity,
+      notedAt: new Date().toISOString(),
+    });
+    if (error) { setAllergyError(error.message); return; }
+    setAllergyForm({ substance: '', reaction: '', severity: 'MILD' });
+    setShowAllergyForm(false);
+    await loadAllergies();
+  };
+
+  const deleteAllergy = async (id: string) => {
+    await supabase.from('Allergy').delete().eq('id', id);
+    await loadAllergies();
   };
 
   useEffect(() => {
@@ -36,6 +67,7 @@ export default function PatientDetailPage() {
       setPatient(p.data as DbPatient);
       setEncounters(enc.data || []);
       await loadDocuments();
+      await loadAllergies();
       setLoading(false);
     })();
   }, [params.id]);
@@ -164,11 +196,63 @@ export default function PatientDetailPage() {
         </div>
 
         <div className="pt-6 border-t border-white/10">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-            <AlertCircle className="w-5 h-5 text-orange-400" />
-            Allergies
-          </h2>
-          <p className="text-slate-300">{patient.allergies || 'None recorded'}</p>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-orange-400" />
+              Allergies
+            </h2>
+            {canManageAllergies(user?.role) && !showAllergyForm && (
+              <Button onClick={() => setShowAllergyForm(true)} variant="outline" size="sm" className="gap-2 border-orange-400/50 text-orange-300 hover:bg-orange-500/10">
+                <Plus className="w-4 h-4" />Add
+              </Button>
+            )}
+          </div>
+
+          {showAllergyForm && (
+            <form onSubmit={addAllergy} className="bg-white/5 rounded-lg p-4 mb-3 space-y-3">
+              {allergyError && <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-2 rounded-lg text-sm">{allergyError}</div>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input placeholder="Substance (e.g. Penicillin)" value={allergyForm.substance} onChange={(e) => setAllergyForm({ ...allergyForm, substance: e.target.value })} className="glass-input px-3 py-2 rounded-lg text-white text-sm" required />
+                <input placeholder="Reaction (e.g. Rash, Anaphylaxis)" value={allergyForm.reaction} onChange={(e) => setAllergyForm({ ...allergyForm, reaction: e.target.value })} className="glass-input px-3 py-2 rounded-lg text-white text-sm" />
+              </div>
+              <select value={allergyForm.severity} onChange={(e) => setAllergyForm({ ...allergyForm, severity: e.target.value })} className="glass-input px-3 py-2 rounded-lg text-white text-sm">
+                <option value="MILD" className="text-black">Mild</option>
+                <option value="MODERATE" className="text-black">Moderate</option>
+                <option value="SEVERE" className="text-black">Severe</option>
+              </select>
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" className="gradient-primary">Save</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setShowAllergyForm(false)}>Cancel</Button>
+              </div>
+            </form>
+          )}
+
+          {allergies.length === 0 ? (
+            <p className="text-slate-400 text-sm">No known allergies recorded</p>
+          ) : (
+            <div className="space-y-2">
+              {allergies.map((a) => (
+                <div key={a.id} className="bg-white/5 rounded-lg px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-sm font-medium">{a.substance}</p>
+                      {a.severity && (
+                        <Badge className={a.severity === 'SEVERE' ? 'bg-red-100 text-red-800' : a.severity === 'MODERATE' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}>
+                          {a.severity}
+                        </Badge>
+                      )}
+                    </div>
+                    {a.reaction && <p className="text-xs text-slate-400 mt-1">{a.reaction}</p>}
+                  </div>
+                  {canManageAllergies(user?.role) && (
+                    <button onClick={() => deleteAllergy(a.id)} className="p-2 rounded-lg bg-red-600/30 hover:bg-red-600/50 text-red-300" title="Delete">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="pt-6 border-t border-white/10">

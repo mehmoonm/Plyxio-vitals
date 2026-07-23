@@ -192,6 +192,15 @@ export interface DbDispense {
   DispenseItem?: DbDispenseItem[];
 }
 
+export interface DbAllergy {
+  id: string;
+  patientId: string;
+  substance: string;
+  reaction: string | null;
+  severity: 'MILD' | 'MODERATE' | 'SEVERE' | null;
+  notedAt: string;
+}
+
 export interface DbPatientDocument {
   id: string;
   patientId: string;
