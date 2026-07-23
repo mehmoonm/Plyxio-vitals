@@ -9,6 +9,8 @@ import type { DbPatient } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
+import { canManageBilling } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 interface LineItem {
   description: string;
@@ -98,6 +100,7 @@ export default function NewInvoicePage() {
   };
 
   return (
+    <RoleGuard allowed={canManageBilling(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -163,5 +166,6 @@ export default function NewInvoicePage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

@@ -10,8 +10,8 @@ import { sendEmail, appointmentReminderEmail } from '@/lib/send-email';
 import type { DbAppointment } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { canCheckIn, canDoEncounters, canManageAppointments } from '@/lib/permissions';
-import { ArrowLeft, Edit, Calendar, UserCheck, Stethoscope, XCircle, Mail } from 'lucide-react';
+import { canCheckIn, canDoEncounters, canManageAppointments, canRecordVitals } from '@/lib/permissions';
+import { ArrowLeft, Edit, Calendar, UserCheck, Stethoscope, XCircle, Mail, Activity } from 'lucide-react';
 
 export default function AppointmentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +22,19 @@ export default function AppointmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [emailStatus, setEmailStatus] = useState('');
+  const [vitalsRecorded, setVitalsRecorded] = useState(false);
+  const [showVitalsForm, setShowVitalsForm] = useState(false);
+  const [vitalsForm, setVitalsForm] = useState({
+    temperatureC: '', pulseBpm: '', respRateBpm: '', bloodPressureSys: '', bloodPressureDia: '',
+    spo2Percent: '', heightCm: '', weightKg: '', painScore: '',
+  });
+  const [vitalsSaving, setVitalsSaving] = useState(false);
+  const [vitalsError, setVitalsError] = useState('');
+
+  const checkVitalsStatus = async () => {
+    const { data } = await supabase.from('Encounter').select('id, Vitals(id)').eq('appointmentId', params.id).maybeSingle();
+    setVitalsRecorded(!!data?.Vitals?.length);
+  };
 
   const load = async () => {
     const { data } = await supabase
@@ -31,6 +44,7 @@ export default function AppointmentDetailPage() {
       .single();
     setApt(data as any);
     setLoading(false);
+    await checkVitalsStatus();
   };
 
   useEffect(() => { load(); }, [params.id]);
@@ -47,6 +61,59 @@ export default function AppointmentDetailPage() {
 
   const startEncounter = () => {
     router.push(`/dashboard/encounters/new?appointmentId=${params.id}&patientId=${apt?.patientId}&doctorId=${apt?.doctorId}`);
+  };
+
+  const saveVitals = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!apt) return;
+    setVitalsSaving(true);
+    setVitalsError('');
+
+    // Find (or create) the Encounter tied to this appointment so the
+    // doctor's later "Start Encounter" step picks up these same vitals
+    // instead of the nurse's reading being lost or duplicated.
+    let encounterId: string;
+    const { data: existing } = await supabase.from('Encounter').select('id').eq('appointmentId', params.id).maybeSingle();
+
+    if (existing) {
+      encounterId = existing.id;
+    } else {
+      const { data: created, error: createError } = await supabase
+        .from('Encounter')
+        .insert({
+          hospitalId: user?.hospitalId,
+          patientId: apt.patientId,
+          doctorId: apt.doctorId,
+          appointmentId: params.id,
+          encounterType: 'OPD',
+        })
+        .select('id')
+        .single();
+      if (createError || !created) { setVitalsError(createError?.message || 'Failed to start visit record'); setVitalsSaving(false); return; }
+      encounterId = created.id;
+    }
+
+    const heightM = vitalsForm.heightCm ? Number(vitalsForm.heightCm) / 100 : null;
+    const bmi = heightM && vitalsForm.weightKg ? Number(vitalsForm.weightKg) / (heightM * heightM) : null;
+    const { error: vitalsInsertError } = await supabase.from('Vitals').insert({
+      encounterId,
+      temperatureC: vitalsForm.temperatureC ? Number(vitalsForm.temperatureC) : null,
+      pulseBpm: vitalsForm.pulseBpm ? Number(vitalsForm.pulseBpm) : null,
+      respRateBpm: vitalsForm.respRateBpm ? Number(vitalsForm.respRateBpm) : null,
+      bloodPressureSys: vitalsForm.bloodPressureSys ? Number(vitalsForm.bloodPressureSys) : null,
+      bloodPressureDia: vitalsForm.bloodPressureDia ? Number(vitalsForm.bloodPressureDia) : null,
+      spo2Percent: vitalsForm.spo2Percent ? Number(vitalsForm.spo2Percent) : null,
+      heightCm: vitalsForm.heightCm ? Number(vitalsForm.heightCm) : null,
+      weightKg: vitalsForm.weightKg ? Number(vitalsForm.weightKg) : null,
+      bmi,
+      painScore: vitalsForm.painScore ? Number(vitalsForm.painScore) : null,
+      recordedById: user?.id,
+    });
+
+    setVitalsSaving(false);
+    if (vitalsInsertError) { setVitalsError(vitalsInsertError.message); return; }
+    setShowVitalsForm(false);
+    await checkVitalsStatus();
   };
 
   const sendReminderEmail = async () => {
@@ -121,6 +188,11 @@ export default function AppointmentDetailPage() {
               <UserCheck className="w-4 h-4" />Check In Patient
             </Button>
           )}
+          {canRecordVitals(user?.role) && ['CHECKED_IN', 'IN_CONSULTATION'].includes(apt.status) && !showVitalsForm && (
+            <Button onClick={() => setShowVitalsForm(true)} variant="outline" className="gap-2 text-emerald-600 border-emerald-300 hover:bg-emerald-50">
+              <Activity className="w-4 h-4" />{vitalsRecorded ? 'Update Vitals' : 'Record Vitals'}
+            </Button>
+          )}
           {canDoEncounters(user?.role) && (apt.status === 'CHECKED_IN' || apt.status === 'IN_CONSULTATION') && (
             <Button onClick={startEncounter} className="gap-2 bg-purple-600 hover:bg-purple-700">
               <Stethoscope className="w-4 h-4" />Start Encounter
@@ -137,7 +209,32 @@ export default function AppointmentDetailPage() {
             </Button>
           )}
         </div>
+        {vitalsRecorded && !showVitalsForm && (
+          <p className="text-sm text-emerald-600 flex items-center gap-1"><Activity className="w-4 h-4" />Vitals recorded for this visit</p>
+        )}
         {emailStatus && <p className="text-sm text-gray-500">{emailStatus}</p>}
+
+        {showVitalsForm && (
+          <form onSubmit={saveVitals} className="pt-4 border-t space-y-3">
+            <h3 className="font-semibold text-gray-900">Record Vitals</h3>
+            {vitalsError && <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">{vitalsError}</div>}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Input placeholder="Temp (°C)" type="number" step="0.1" value={vitalsForm.temperatureC} onChange={(e) => setVitalsForm({ ...vitalsForm, temperatureC: e.target.value })} />
+              <Input placeholder="Pulse (bpm)" type="number" value={vitalsForm.pulseBpm} onChange={(e) => setVitalsForm({ ...vitalsForm, pulseBpm: e.target.value })} />
+              <Input placeholder="Resp Rate" type="number" value={vitalsForm.respRateBpm} onChange={(e) => setVitalsForm({ ...vitalsForm, respRateBpm: e.target.value })} />
+              <Input placeholder="BP Sys" type="number" value={vitalsForm.bloodPressureSys} onChange={(e) => setVitalsForm({ ...vitalsForm, bloodPressureSys: e.target.value })} />
+              <Input placeholder="BP Dia" type="number" value={vitalsForm.bloodPressureDia} onChange={(e) => setVitalsForm({ ...vitalsForm, bloodPressureDia: e.target.value })} />
+              <Input placeholder="SpO2 (%)" type="number" value={vitalsForm.spo2Percent} onChange={(e) => setVitalsForm({ ...vitalsForm, spo2Percent: e.target.value })} />
+              <Input placeholder="Height (cm)" type="number" value={vitalsForm.heightCm} onChange={(e) => setVitalsForm({ ...vitalsForm, heightCm: e.target.value })} />
+              <Input placeholder="Weight (kg)" type="number" value={vitalsForm.weightKg} onChange={(e) => setVitalsForm({ ...vitalsForm, weightKg: e.target.value })} />
+              <Input placeholder="Pain (0-10)" type="number" min={0} max={10} value={vitalsForm.painScore} onChange={(e) => setVitalsForm({ ...vitalsForm, painScore: e.target.value })} />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={vitalsSaving} className="gap-2"><Activity className="w-4 h-4" />{vitalsSaving ? 'Saving...' : 'Save Vitals'}</Button>
+              <Button type="button" variant="outline" onClick={() => setShowVitalsForm(false)}>Cancel</Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

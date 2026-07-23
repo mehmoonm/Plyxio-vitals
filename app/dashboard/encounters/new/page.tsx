@@ -9,6 +9,8 @@ import type { DbPatient, DbDrug } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
+import { canDoEncounters } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 interface RxItem {
   drugId: string;
@@ -44,6 +46,8 @@ export default function NewEncounterPage() {
   });
 
   const [rxItems, setRxItems] = useState<RxItem[]>([]);
+  const [existingEncounterId, setExistingEncounterId] = useState<string | null>(null);
+  const [existingVitalsId, setExistingVitalsId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -53,8 +57,44 @@ export default function NewEncounterPage() {
       }
       const { data: drugData } = await supabase.from('Drug').select('*').order('name');
       setDrugs((drugData as DbDrug[]) || []);
+
+      // If a nurse already started this visit (e.g. recorded vitals at
+      // check-in), reuse that same Encounter instead of creating a
+      // duplicate one when the doctor opens this form.
+      if (appointmentId) {
+        const { data: existing } = await supabase
+          .from('Encounter')
+          .select('*, Vitals(*)')
+          .eq('appointmentId', appointmentId)
+          .maybeSingle();
+        if (existing) {
+          setExistingEncounterId(existing.id);
+          setNotes({
+            chiefComplaint: existing.chiefComplaint || '',
+            historyOfPresentIllness: existing.historyOfPresentIllness || '',
+            examinationFindings: existing.examinationFindings || '',
+            diagnosis: existing.diagnosis || '',
+            plan: existing.plan || '',
+          });
+          const v = existing.Vitals?.[0];
+          if (v) {
+            setExistingVitalsId(v.id);
+            setVitals({
+              temperatureC: v.temperatureC?.toString() || '',
+              pulseBpm: v.pulseBpm?.toString() || '',
+              respRateBpm: v.respRateBpm?.toString() || '',
+              bloodPressureSys: v.bloodPressureSys?.toString() || '',
+              bloodPressureDia: v.bloodPressureDia?.toString() || '',
+              spo2Percent: v.spo2Percent?.toString() || '',
+              heightCm: v.heightCm?.toString() || '',
+              weightKg: v.weightKg?.toString() || '',
+              painScore: v.painScore?.toString() || '',
+            });
+          }
+        }
+      }
     })();
-  }, [patientId]);
+  }, [patientId, appointmentId]);
 
   const addRxItem = () => setRxItems([...rxItems, { drugId: '', dose: '', frequency: '', route: 'Oral', durationDays: 5, quantity: 10, instructions: '' }]);
   const updateRxItem = (i: number, field: keyof RxItem, value: string | number) => {
@@ -75,32 +115,47 @@ export default function NewEncounterPage() {
 
     setLoading(true);
 
-    const { data: encounter, error: encError } = await supabase
-      .from('Encounter')
-      .insert({
-        hospitalId: user?.hospitalId,
-        patientId,
-        doctorId,
-        appointmentId: appointmentId || null,
-        encounterType: 'OPD',
-        ...notes,
-        signedAt: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (encError || !encounter) {
-      setError(encError?.message || 'Failed to create encounter');
-      setLoading(false);
-      return;
+    let encounter: any;
+    if (existingEncounterId) {
+      const { data, error: encError } = await supabase
+        .from('Encounter')
+        .update({ ...notes, signedAt: new Date().toISOString() })
+        .eq('id', existingEncounterId)
+        .select()
+        .single();
+      if (encError || !data) {
+        setError(encError?.message || 'Failed to update encounter');
+        setLoading(false);
+        return;
+      }
+      encounter = data;
+    } else {
+      const { data, error: encError } = await supabase
+        .from('Encounter')
+        .insert({
+          hospitalId: user?.hospitalId,
+          patientId,
+          doctorId,
+          appointmentId: appointmentId || null,
+          encounterType: 'OPD',
+          ...notes,
+          signedAt: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (encError || !data) {
+        setError(encError?.message || 'Failed to create encounter');
+        setLoading(false);
+        return;
+      }
+      encounter = data;
     }
 
     const hasVitals = Object.values(vitals).some((v) => v !== '');
     if (hasVitals) {
       const heightM = vitals.heightCm ? Number(vitals.heightCm) / 100 : null;
       const bmi = heightM && vitals.weightKg ? Number(vitals.weightKg) / (heightM * heightM) : null;
-      await supabase.from('Vitals').insert({
-        encounterId: encounter.id,
+      const vitalsPayload = {
         temperatureC: vitals.temperatureC ? Number(vitals.temperatureC) : null,
         pulseBpm: vitals.pulseBpm ? Number(vitals.pulseBpm) : null,
         respRateBpm: vitals.respRateBpm ? Number(vitals.respRateBpm) : null,
@@ -112,29 +167,37 @@ export default function NewEncounterPage() {
         bmi,
         painScore: vitals.painScore ? Number(vitals.painScore) : null,
         recordedById: user?.id,
-      });
+      };
+      if (existingVitalsId) {
+        await supabase.from('Vitals').update(vitalsPayload).eq('id', existingVitalsId);
+      } else {
+        await supabase.from('Vitals').insert({ encounterId: encounter.id, ...vitalsPayload });
+      }
     }
 
     if (rxItems.length > 0 && rxItems.every((it) => it.drugId)) {
-      const { data: prescription, error: rxError } = await supabase
-        .from('Prescription')
-        .insert({ encounterId: encounter.id })
-        .select()
-        .single();
+      const { data: existingRx } = await supabase.from('Prescription').select('id').eq('encounterId', encounter.id).maybeSingle();
+      if (!existingRx) {
+        const { data: prescription, error: rxError } = await supabase
+          .from('Prescription')
+          .insert({ encounterId: encounter.id })
+          .select()
+          .single();
 
-      if (!rxError && prescription) {
-        await supabase.from('PrescriptionItem').insert(
-          rxItems.map((it) => ({
-            prescriptionId: prescription.id,
-            drugId: it.drugId,
-            dose: it.dose || null,
-            frequency: it.frequency || null,
-            route: it.route || null,
-            durationDays: it.durationDays || null,
-            quantity: it.quantity || null,
-            instructions: it.instructions || null,
-          }))
-        );
+        if (!rxError && prescription) {
+          await supabase.from('PrescriptionItem').insert(
+            rxItems.map((it) => ({
+              prescriptionId: prescription.id,
+              drugId: it.drugId,
+              dose: it.dose || null,
+              frequency: it.frequency || null,
+              route: it.route || null,
+              durationDays: it.durationDays || null,
+              quantity: it.quantity || null,
+              instructions: it.instructions || null,
+            }))
+          );
+        }
       }
     }
 
@@ -147,6 +210,7 @@ export default function NewEncounterPage() {
   };
 
   return (
+    <RoleGuard allowed={canDoEncounters(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -229,5 +293,6 @@ export default function NewEncounterPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

@@ -9,6 +9,8 @@ import type { DbPatient, DbUser } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageAppointments } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 export default function NewAppointmentPage() {
   const router = useRouter();
@@ -66,6 +68,7 @@ export default function NewAppointmentPage() {
   };
 
   return (
+    <RoleGuard allowed={canManageAppointments(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -117,5 +120,6 @@ export default function NewAppointmentPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

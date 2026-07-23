@@ -4,13 +4,17 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { isAdmin } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 export default function EditStaffPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
@@ -59,6 +63,7 @@ export default function EditStaffPage() {
   if (!form) return <div className="text-gray-500">Staff member not found</div>;
 
   return (
+    <RoleGuard allowed={isAdmin(user?.role) || user?.id === params.id}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Edit Staff Member</h1>
@@ -123,5 +128,6 @@ export default function EditStaffPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

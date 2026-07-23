@@ -4,13 +4,17 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageAppointments } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 export default function EditAppointmentPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
@@ -52,6 +56,7 @@ export default function EditAppointmentPage() {
   if (fetching) return <div className="text-gray-500">Loading…</div>;
 
   return (
+    <RoleGuard allowed={canManageAppointments(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -83,5 +88,6 @@ export default function EditAppointmentPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

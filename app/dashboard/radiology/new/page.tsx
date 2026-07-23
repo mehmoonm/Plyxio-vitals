@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageRadiology } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 const STUDY_TYPES = ['X-Ray', 'CT Scan', 'MRI', 'Ultrasound', 'Mammography'];
 
@@ -53,6 +55,7 @@ export default function NewRadiologyOrderPage() {
   };
 
   return (
+    <RoleGuard allowed={canManageRadiology(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -101,5 +104,6 @@ export default function NewRadiologyOrderPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

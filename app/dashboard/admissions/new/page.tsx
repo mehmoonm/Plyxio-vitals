@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageBeds } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 export default function NewAdmissionPage() {
   const router = useRouter();
@@ -61,6 +63,7 @@ export default function NewAdmissionPage() {
   };
 
   return (
+    <RoleGuard allowed={canManageBeds(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -110,5 +113,6 @@ export default function NewAdmissionPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

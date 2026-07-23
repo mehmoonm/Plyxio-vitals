@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageLab } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 export default function NewLabOrderPage() {
   const router = useRouter();
@@ -68,6 +70,7 @@ export default function NewLabOrderPage() {
   };
 
   return (
+    <RoleGuard allowed={canManageLab(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -122,5 +125,6 @@ export default function NewLabOrderPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

@@ -9,6 +9,8 @@ import { logAudit } from '@/lib/audit-log';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageStaff } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 const ROLES = [
   'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST', 'LAB_TECHNICIAN',
@@ -74,6 +76,7 @@ export default function NewStaffPage() {
   };
 
   return (
+    <RoleGuard allowed={canManageStaff(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -141,5 +144,6 @@ export default function NewStaffPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }

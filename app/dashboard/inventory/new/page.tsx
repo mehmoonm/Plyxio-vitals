@@ -9,6 +9,8 @@ import type { DbDrug } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save } from 'lucide-react';
+import { canManageInventory } from '@/lib/permissions';
+import { RoleGuard } from '@/components/dashboard/role-guard';
 
 export default function NewInventoryItemPage() {
   const router = useRouter();
@@ -65,6 +67,7 @@ export default function NewInventoryItemPage() {
   };
 
   return (
+    <RoleGuard allowed={canManageInventory(user?.role)}>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -133,5 +136,6 @@ export default function NewInventoryItemPage() {
         </Button>
       </form>
     </div>
+    </RoleGuard>
   );
 }
