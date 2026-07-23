@@ -41,7 +41,7 @@ export function appointmentReminderEmail(params: {
           ${reason ? `<tr><td style="padding: 6px 0; color: #64748b;">Reason</td><td style="padding: 6px 0;">${reason}</td></tr>` : ''}
         </table>
         <p style="color: #64748b; font-size: 13px;">Please arrive 10–15 minutes early. If you need to reschedule, contact the hospital directly.</p>
-        <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">Sent by ${hospitalName} via PLYXIO HMS</p>
+        <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">Sent by ${hospitalName} via PLYXIO Vitals</p>
       </div>
     `,
   };

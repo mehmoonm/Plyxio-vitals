@@ -1,4 +1,4 @@
-// Types matching the real PLYXIO HMS Supabase schema (public schema).
+// Types matching the real PLYXIO Vitals Supabase schema (public schema).
 // These mirror actual DB columns rather than the old mock-data shapes.
 
 export type Role =

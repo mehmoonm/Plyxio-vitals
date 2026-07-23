@@ -22,11 +22,18 @@ export default function DispensePrescriptionPage() {
   const [error, setError] = useState('');
 
   const load = async () => {
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('Prescription')
       .select('*, Encounter(patientId, Patient(fullName, mrn)), PrescriptionItem(*, Drug(name, strength)), Dispense(*, User(fullName), DispenseItem(*, InventoryItem(*, Drug(name, strength))))')
       .eq('id', params.id)
       .single();
+
+    if (fetchError) {
+      setError(fetchError.message);
+      setLoading(false);
+      return;
+    }
+
     setPrescription(data);
 
     if (data && (!data.Dispense || data.Dispense.length === 0)) {
@@ -100,7 +107,7 @@ export default function DispensePrescriptionPage() {
   };
 
   if (loading) return <p className="text-gray-400">Loading…</p>;
-  if (!prescription) return <p className="text-gray-400">Prescription not found</p>;
+  if (!prescription) return <p className="text-gray-400">{error || 'Prescription not found'}</p>;
 
   const alreadyDispensed = prescription.Dispense?.length > 0;
 

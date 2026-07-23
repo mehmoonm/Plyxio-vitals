@@ -155,7 +155,7 @@ export default function LoginPage() {
 
           {/* Demo Credentials */}
           <div className="pt-4 border-t border-white/10">
-            <p className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-widest">Demo Credentials (PLYXIO HMS)</p>
+            <p className="text-xs font-semibold text-gray-300 mb-3 uppercase tracking-widest">Demo Credentials (PLYXIO Vitals)</p>
             <div className="space-y-2 text-xs">
               {[
                 { role: 'Hospital Admin', email: 'admin@plyxio-demo.pk', pass: 'Plyxio@2026' },
