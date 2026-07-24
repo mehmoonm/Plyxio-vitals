@@ -5,7 +5,7 @@ import { supabase } from './supabase/client';
 import { useAuth } from './auth-context';
 
 export type ShareableRole = 'DOCTOR' | 'NURSE' | 'RECEPTIONIST' | 'PHARMACIST' | 'LAB_TECHNICIAN' | 'RADIOLOGIST' | 'BILLING_CLERK' | 'ACCOUNTANT';
-export type PageKey = 'patients' | 'appointments' | 'admissions' | 'lab' | 'radiology' | 'inventory' | 'pharmacy' | 'billing' | 'messages' | 'doctors' | 'finances' | 'referrals' | 'medicalCertificates' | 'queue' | 'attendance' | 'consentForms' | 'surgeries' | 'bloodBank';
+export type PageKey = 'patients' | 'appointments' | 'admissions' | 'lab' | 'radiology' | 'inventory' | 'pharmacy' | 'billing' | 'messages' | 'doctors' | 'finances' | 'referrals' | 'medicalCertificates' | 'queue' | 'attendance' | 'consentForms' | 'surgeries' | 'bloodBank' | 'purchaseOrders' | 'equipment';
 
 // Sensible defaults matching each role's previous fixed menu. A hospital
 // admin can override any of these per-hospital via Settings.
@@ -13,7 +13,7 @@ export const DEFAULT_ROLE_PAGES: Record<ShareableRole, PageKey[]> = {
   DOCTOR: ['appointments', 'admissions', 'lab', 'radiology', 'patients', 'messages', 'referrals', 'medicalCertificates', 'queue', 'attendance', 'consentForms', 'surgeries', 'bloodBank'],
   RECEPTIONIST: ['appointments', 'billing', 'queue', 'attendance'],
   NURSE: ['patients', 'admissions', 'lab', 'radiology', 'queue', 'attendance', 'consentForms', 'surgeries', 'bloodBank'],
-  PHARMACIST: ['inventory', 'pharmacy', 'attendance'],
+  PHARMACIST: ['inventory', 'pharmacy', 'attendance', 'purchaseOrders'],
   LAB_TECHNICIAN: ['lab', 'attendance', 'bloodBank'],
   RADIOLOGIST: ['radiology', 'attendance'],
   BILLING_CLERK: ['billing', 'attendance'],

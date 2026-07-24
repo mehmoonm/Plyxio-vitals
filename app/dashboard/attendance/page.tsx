@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { isAdmin } from '@/lib/permissions';
+import { notify } from '@/lib/notifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +73,14 @@ export default function AttendancePage() {
       reason: leaveForm.reason || null,
     });
     if (insertError) { setError(insertError.message); return; }
+    notify({
+      hospitalId: user?.hospitalId,
+      targetRole: 'HOSPITAL_ADMIN',
+      type: 'LEAVE_REQUEST',
+      title: `${user?.fullName} requested leave`,
+      message: `${leaveForm.type} — ${leaveForm.startDate} to ${leaveForm.endDate}`,
+      link: '/dashboard/attendance',
+    });
     setLeaveForm({ type: 'CASUAL', startDate: '', endDate: '', reason: '' });
     setShowLeaveForm(false);
     await load();

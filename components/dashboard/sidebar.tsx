@@ -29,6 +29,8 @@ import {
   FileSignature,
   Scissors,
   Droplet,
+  Truck,
+  Wrench,
 } from 'lucide-react';
 import { useSettings, DEFAULT_ROLE_PAGES, type ShareableRole, type PageKey } from '@/lib/settings-context';
 import { useModules, type ModuleKey } from '@/lib/hospital-modules-context';
@@ -57,6 +59,8 @@ const PAGE_DEFINITIONS: Record<PageKey, MenuItem> = {
   consentForms: { href: '/dashboard/consent-forms', label: 'Consent Forms', icon: FileSignature },
   surgeries: { href: '/dashboard/surgeries', label: 'Operation Theatre', icon: Scissors },
   bloodBank: { href: '/dashboard/blood-bank', label: 'Blood Bank', icon: Droplet },
+  purchaseOrders: { href: '/dashboard/purchase-orders', label: 'Purchase Orders', icon: Truck },
+  equipment: { href: '/dashboard/equipment', label: 'Equipment & Assets', icon: Wrench },
 };
 
 const adminMenuItems: MenuItem[] = [
@@ -76,6 +80,8 @@ const adminMenuItems: MenuItem[] = [
   { href: '/dashboard/consent-forms', label: 'Consent Forms', icon: FileSignature },
   { href: '/dashboard/surgeries', label: 'Operation Theatre', icon: Scissors },
   { href: '/dashboard/blood-bank', label: 'Blood Bank', icon: Droplet },
+  { href: '/dashboard/purchase-orders', label: 'Purchase Orders', icon: Truck },
+  { href: '/dashboard/equipment', label: 'Equipment & Assets', icon: Wrench },
   { href: '/dashboard/billing', label: 'Billing', icon: FileText, moduleKey: 'billing' },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
   { href: '/dashboard/pharmacy', label: 'Pharmacy', icon: Pill, moduleKey: 'inventory' },

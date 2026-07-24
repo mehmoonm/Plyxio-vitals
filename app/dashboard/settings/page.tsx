@@ -42,6 +42,8 @@ const PAGE_LABELS: Record<PageKey, string> = {
   consentForms: 'Consent Forms',
   surgeries: 'Operation Theatre',
   bloodBank: 'Blood Bank',
+  purchaseOrders: 'Purchase Orders',
+  equipment: 'Equipment & Assets',
 };
 
 const EDIT_MODULE_LABELS: Record<EditModule, string> = {

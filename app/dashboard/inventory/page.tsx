@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { canManageInventory } from '@/lib/permissions';
+import { notify } from '@/lib/notifications';
 import { canEditModule } from '@/lib/settings-context';
 import { useSettings } from '@/lib/settings-context';
 import { currencySymbol } from '@/lib/currency';
@@ -28,8 +29,31 @@ export default function InventoryPage() {
       const { data } = await supabase.from('InventoryItem').select('*, Drug(name, genericName, form, strength)');
       setInventory((data as any) || []);
       setLoading(false);
+
+      const low = ((data as any) || []).filter((item: any) => item.quantityOnHand < item.reorderLevel);
+      if (low.length > 0 && user?.hospitalId) {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { data: existing } = await supabase
+          .from('Notification')
+          .select('id')
+          .eq('type', 'LOW_STOCK')
+          .eq('targetRole', 'PHARMACIST')
+          .gte('createdAt', todayStart.toISOString())
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          notify({
+            hospitalId: user.hospitalId,
+            targetRole: 'PHARMACIST',
+            type: 'LOW_STOCK',
+            title: `${low.length} item${low.length === 1 ? '' : 's'} running low`,
+            message: low.slice(0, 3).map((i: any) => i.Drug?.name).filter(Boolean).join(', ') + (low.length > 3 ? '…' : ''),
+            link: '/dashboard/inventory',
+          });
+        }
+      }
     })();
-  }, []);
+  }, [user?.hospitalId]);
 
   const filtered = inventory.filter((item) =>
     (item.Drug?.name || '').toLowerCase().includes(searchTerm.toLowerCase())

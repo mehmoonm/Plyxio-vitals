@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Settings, Menu } from 'lucide-react';
+import { NotificationBell } from './notification-bell';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const router = useRouter();
@@ -38,6 +39,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         <div className="hidden lg:flex items-center space-x-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
           <span className="text-sm text-gray-300">{user?.email}</span>
         </div>
+        <NotificationBell />
         <Link href="/dashboard/settings">
           <button className="p-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 transition-all duration-300">
             <Settings className="w-5 h-5" />
