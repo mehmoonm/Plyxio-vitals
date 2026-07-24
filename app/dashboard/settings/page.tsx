@@ -37,6 +37,7 @@ const PAGE_LABELS: Record<PageKey, string> = {
   finances: 'Finances',
   referrals: 'Referrals',
   medicalCertificates: 'Medical Certificates',
+  queue: 'Walk-in Queue',
 };
 
 const EDIT_MODULE_LABELS: Record<EditModule, string> = {

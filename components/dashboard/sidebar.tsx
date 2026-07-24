@@ -48,6 +48,7 @@ const PAGE_DEFINITIONS: Record<PageKey, MenuItem> = {
   finances: { href: '/dashboard/finances', label: 'Finances', icon: Wallet },
   referrals: { href: '/dashboard/referrals', label: 'Referrals', icon: Share2 },
   medicalCertificates: { href: '/dashboard/medical-certificates', label: 'Medical Certificates', icon: FileCheck },
+  queue: { href: '/dashboard/queue', label: 'Walk-in Queue', icon: Users },
 };
 
 const adminMenuItems: MenuItem[] = [
@@ -60,6 +61,7 @@ const adminMenuItems: MenuItem[] = [
   { href: '/dashboard/doctors', label: 'Doctors', icon: Stethoscope },
   { href: '/dashboard/referrals', label: 'Referrals', icon: Share2 },
   { href: '/dashboard/medical-certificates', label: 'Medical Certificates', icon: FileCheck },
+  { href: '/dashboard/queue', label: 'Walk-in Queue', icon: Users },
   { href: '/dashboard/billing', label: 'Billing', icon: FileText, moduleKey: 'billing' },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
   { href: '/dashboard/pharmacy', label: 'Pharmacy', icon: Pill, moduleKey: 'inventory' },

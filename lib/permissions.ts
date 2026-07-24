@@ -93,6 +93,11 @@ export function canManageDepartments(role?: Role | null) {
   return isAdmin(role);
 }
 
+// Matches the DB's queue_write policy
+export function canManageQueue(role?: Role | null) {
+  return !!role && [...ADMIN, 'RECEPTIONIST', 'DOCTOR', 'NURSE'].includes(role);
+}
+
 // Matches the DB's referral_write policy
 export function canManageReferrals(role?: Role | null) {
   return !!role && [...ADMIN, 'DOCTOR'].includes(role);
