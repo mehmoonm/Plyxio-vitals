@@ -9,7 +9,7 @@ import type { DbPatient } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Edit, Trash2, RotateCcw, Archive } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, RotateCcw, Archive, Upload } from 'lucide-react';
 
 export default function PatientsPage() {
   const { user } = useAuth();
@@ -84,12 +84,17 @@ export default function PatientsPage() {
           <p className="text-gray-400 mt-2">Manage all patient records and information</p>
         </div>
         {canManagePatients(user?.role) && (
-          <Link href="/dashboard/patients/new">
-            <Button className="gradient-primary text-white font-semibold py-2 px-4 rounded-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all duration-300 flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              <span>New Patient</span>
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/dashboard/patients/import">
+              <Button variant="outline" className="gap-2"><Upload className="w-4 h-4" />Import CSV</Button>
+            </Link>
+            <Link href="/dashboard/patients/new">
+              <Button className="gradient-primary text-white font-semibold py-2 px-4 rounded-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all duration-300 flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                <span>New Patient</span>
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 
