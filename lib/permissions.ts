@@ -42,6 +42,11 @@ export function canManageLab(role?: Role | null) {
   return !!role && [...ADMIN, 'LAB_TECHNICIAN', 'DOCTOR'].includes(role);
 }
 
+// Matches the DB's labcat_write policy (narrower than canManageLab -- no DOCTOR)
+export function canManageLabCatalog(role?: Role | null) {
+  return !!role && [...ADMIN, 'LAB_TECHNICIAN'].includes(role);
+}
+
 export function canManageRadiology(role?: Role | null) {
   return !!role && [...ADMIN, 'RADIOLOGIST', 'DOCTOR'].includes(role);
 }

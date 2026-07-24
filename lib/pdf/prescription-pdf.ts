@@ -22,14 +22,18 @@ interface PrescriptionPdfData {
 
 async function buildPrescriptionDoc(data: PrescriptionPdfData): Promise<jsPDF> {
   const doc = new jsPDF();
+
+  const HEADER_TOP = 10;
+  const LOGO_BOX = 20;
   let titleX = 14;
 
   if (data.hospitalLogo) {
     try {
       const { width, height } = await getImageDimensions(data.hospitalLogo);
-      const { w, h } = fitBox(width, height, 16);
-      doc.addImage(data.hospitalLogo, detectImageFormat(data.hospitalLogo), 14, 12, w, h);
-      titleX = 34;
+      const { w, h } = fitBox(width, height, 18);
+      const logoY = HEADER_TOP + (LOGO_BOX - h) / 2;
+      doc.addImage(data.hospitalLogo, detectImageFormat(data.hospitalLogo), 14, logoY, w, h);
+      titleX = 14 + LOGO_BOX + 4;
     } catch {
       // Malformed/unsupported image data — fall back to text-only header
     }

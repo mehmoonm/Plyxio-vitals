@@ -5,15 +5,19 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { canManageInventory } from '@/lib/permissions';
+import { useSettings } from '@/lib/settings-context';
+import { currencySymbol } from '@/lib/currency';
 import type { DbInventoryItem } from '@/lib/supabase/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, AlertTriangle, Plus } from 'lucide-react';
+import { Search, AlertTriangle, Plus, Pencil } from 'lucide-react';
 
 export default function InventoryPage() {
   const { user } = useAuth();
+  const { settings } = useSettings();
+  const currency = currencySymbol(settings.currency);
   const [searchTerm, setSearchTerm] = useState('');
   const [inventory, setInventory] = useState<DbInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +53,7 @@ export default function InventoryPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card><CardContent className="pt-6"><p className="text-gray-500 text-sm">Total Items</p><p className="text-2xl font-bold text-gray-900 mt-2">{inventory.length}</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-gray-500 text-sm">Total Value</p><p className="text-2xl font-bold text-gray-900 mt-2">Rs {totalValue.toLocaleString()}</p></CardContent></Card>
+        <Card><CardContent className="pt-6"><p className="text-gray-500 text-sm">Total Value</p><p className="text-2xl font-bold text-gray-900 mt-2">{currency} {totalValue.toLocaleString()}</p></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm">Low Stock Items</p><p className="text-2xl font-bold text-red-600 mt-2">{lowStock.length}</p></div>{lowStock.length > 0 && <AlertTriangle className="w-8 h-8 text-red-500" />}</div></CardContent></Card>
       </div>
 
@@ -82,13 +86,14 @@ export default function InventoryPage() {
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 text-sm">Reorder Level</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 text-sm">Unit Cost</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-600 text-sm">Status</th>
+                  {canManageInventory(user?.role) && <th className="text-left py-3 px-4 font-semibold text-gray-600 text-sm">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-500">Loading…</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center text-gray-500">Loading…</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-500">No inventory items found</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center text-gray-500">No inventory items found</td></tr>
                 ) : (
                   filtered.map((item) => (
                     <tr key={item.id} className="border-b hover:bg-gray-50">
@@ -96,12 +101,21 @@ export default function InventoryPage() {
                       <td className="py-3 px-4 text-gray-600 text-sm">{item.Drug?.form} {item.Drug?.strength}</td>
                       <td className="py-3 px-4 text-gray-900">{item.quantityOnHand}</td>
                       <td className="py-3 px-4 text-gray-600 text-sm">{item.reorderLevel}</td>
-                      <td className="py-3 px-4 text-gray-900">Rs {Number(item.unitCost || 0).toLocaleString()}</td>
+                      <td className="py-3 px-4 text-gray-900">{currency} {Number(item.unitCost || 0).toLocaleString()}</td>
                       <td className="py-3 px-4">
                         <Badge className={item.quantityOnHand < item.reorderLevel ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
                           {item.quantityOnHand < item.reorderLevel ? 'Low Stock' : 'In Stock'}
                         </Badge>
                       </td>
+                      {canManageInventory(user?.role) && (
+                        <td className="py-3 px-4">
+                          <Link href={`/dashboard/inventory/${item.id}/edit`}>
+                            <button className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600" title="Edit">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          </Link>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}

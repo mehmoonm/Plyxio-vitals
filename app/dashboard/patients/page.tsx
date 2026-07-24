@@ -8,13 +8,17 @@ import { canManagePatients, isAdmin } from '@/lib/permissions';
 import type { DbPatient } from '@/lib/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, Eye, Edit, Trash2, RotateCcw, Archive } from 'lucide-react';
 
 export default function PatientsPage() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [patients, setPatients] = useState<DbPatient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
+  const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -25,21 +29,52 @@ export default function PatientsPage() {
 
   useEffect(() => { load(); }, []);
 
-  const filteredPatients = patients.filter(
-    (p) =>
-      p.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.mrn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPatients = patients
+    .filter((p) => (showArchived ? true : p.isActive !== false))
+    .filter(
+      (p) =>
+        p.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.mrn.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('Patient').delete().eq('id', id);
-    load();
+  const handleDelete = async (patient: DbPatient) => {
+    if (!confirm(`Delete ${patient.fullName}? This can't be undone.`)) return;
+    setBusyId(patient.id);
+    setError('');
+
+    const { error: deleteError } = await supabase.from('Patient').delete().eq('id', patient.id);
+
+    if (deleteError) {
+      // Postgres 23503 = foreign key violation. This patient has real
+      // history (appointments, invoices, records, etc) that can't be
+      // deleted out from under -- offer to archive instead, which hides
+      // them from the active list without touching their medical/billing
+      // history.
+      if (deleteError.code === '23503') {
+        if (confirm(`${patient.fullName} has existing medical or billing records, so they can't be permanently deleted. Archive them instead? (Hides them from the active list, keeps all history intact.)`)) {
+          const { error: archiveError } = await supabase.from('Patient').update({ isActive: false }).eq('id', patient.id);
+          if (archiveError) setError(archiveError.message);
+        }
+      } else {
+        setError(deleteError.message);
+      }
+    }
+
+    setBusyId(null);
+    await load();
+  };
+
+  const handleReactivate = async (patient: DbPatient) => {
+    setBusyId(patient.id);
+    await supabase.from('Patient').update({ isActive: true }).eq('id', patient.id);
+    setBusyId(null);
+    await load();
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-4xl font-bold heading-gradient">
             Patient Management
@@ -56,8 +91,10 @@ export default function PatientsPage() {
         )}
       </div>
 
-      <div className="glass-card rounded-2xl p-4">
-        <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10 focus-within:border-white/30 transition-all">
+      {error && <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-lg text-sm">{error}</div>}
+
+      <div className="glass-card rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/10 focus-within:border-white/30 transition-all flex-1">
           <Search className="w-5 h-5 text-gray-400" />
           <Input
             placeholder="Search patients by name, MRN, or email..."
@@ -66,6 +103,12 @@ export default function PatientsPage() {
             className="glass-input border-0 bg-transparent focus-visible:ring-0 text-white placeholder-gray-400"
           />
         </div>
+        {isAdmin(user?.role) && (
+          <label className="flex items-center gap-2 text-sm text-gray-300 whitespace-nowrap px-2">
+            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="w-4 h-4" />
+            Show archived
+          </label>
+        )}
       </div>
 
       <div className="glass-card rounded-2xl overflow-hidden">
@@ -93,7 +136,10 @@ export default function PatientsPage() {
                 filteredPatients.map((patient) => (
                   <tr key={patient.id} className="hover:bg-gradient-to-r hover:from-indigo-600/10 hover:to-cyan-600/10 transition-colors duration-300 group">
                     <td className="py-4 px-6">
-                      <p className="font-semibold text-white group-hover:text-indigo-300 transition-colors">{patient.fullName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-white group-hover:text-indigo-300 transition-colors">{patient.fullName}</p>
+                        {patient.isActive === false && <Badge className="bg-gray-200 text-gray-700">Archived</Badge>}
+                      </div>
                       <p className="text-xs text-gray-400 mt-1">{patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : '—'}</p>
                     </td>
                     <td className="py-4 px-6 text-gray-300 text-sm">{patient.mrn}</td>
@@ -118,13 +164,25 @@ export default function PatientsPage() {
                           </Link>
                         )}
                         {isAdmin(user?.role) && (
-                          <button
-                            onClick={() => handleDelete(patient.id)}
-                            className="p-2 rounded-lg bg-red-600/30 hover:bg-red-600/50 border border-red-400/50 text-red-300 transition-all duration-300"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          patient.isActive === false ? (
+                            <button
+                              onClick={() => handleReactivate(patient)}
+                              disabled={busyId === patient.id}
+                              className="p-2 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-300 transition-all duration-300"
+                              title="Reactivate"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleDelete(patient)}
+                              disabled={busyId === patient.id}
+                              className="p-2 rounded-lg bg-red-600/30 hover:bg-red-600/50 border border-red-400/50 text-red-300 transition-all duration-300"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )
                         )}
                       </div>
                     </td>

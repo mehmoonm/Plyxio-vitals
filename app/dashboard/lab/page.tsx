@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
-import { canManageLab } from '@/lib/permissions';
+import { canManageLab, canManageLabCatalog } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FlaskConical } from 'lucide-react';
+import { Plus, FlaskConical, Settings2 } from 'lucide-react';
 
 export default function LabOrdersPage() {
   const router = useRouter();
@@ -45,11 +45,18 @@ export default function LabOrdersPage() {
           <h1 className="text-3xl font-bold heading-gradient">Lab Orders</h1>
           <p className="text-gray-400 mt-2">Test orders and results</p>
         </div>
-        {canManageLab(user?.role) && (
-          <Link href="/dashboard/lab/new">
-            <Button className="gap-2 gradient-primary"><Plus className="w-4 h-4" />New Lab Order</Button>
-          </Link>
-        )}
+        <div className="flex gap-2">
+          {canManageLabCatalog(user?.role) && (
+            <Link href="/dashboard/lab/catalog">
+              <Button variant="outline" className="gap-2"><Settings2 className="w-4 h-4" />Manage Tests</Button>
+            </Link>
+          )}
+          {canManageLab(user?.role) && (
+            <Link href="/dashboard/lab/new">
+              <Button className="gap-2 gradient-primary"><Plus className="w-4 h-4" />New Lab Order</Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="glass-card rounded-2xl overflow-hidden">
