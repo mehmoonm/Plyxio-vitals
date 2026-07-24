@@ -26,6 +26,9 @@ import {
   Share2,
   FileCheck,
   MessageSquare,
+  FileSignature,
+  Scissors,
+  Droplet,
 } from 'lucide-react';
 import { useSettings, DEFAULT_ROLE_PAGES, type ShareableRole, type PageKey } from '@/lib/settings-context';
 import { useModules, type ModuleKey } from '@/lib/hospital-modules-context';
@@ -51,6 +54,9 @@ const PAGE_DEFINITIONS: Record<PageKey, MenuItem> = {
   medicalCertificates: { href: '/dashboard/medical-certificates', label: 'Medical Certificates', icon: FileCheck },
   queue: { href: '/dashboard/queue', label: 'Walk-in Queue', icon: Users },
   attendance: { href: '/dashboard/attendance', label: 'Attendance & Leave', icon: Clock },
+  consentForms: { href: '/dashboard/consent-forms', label: 'Consent Forms', icon: FileSignature },
+  surgeries: { href: '/dashboard/surgeries', label: 'Operation Theatre', icon: Scissors },
+  bloodBank: { href: '/dashboard/blood-bank', label: 'Blood Bank', icon: Droplet },
 };
 
 const adminMenuItems: MenuItem[] = [
@@ -67,6 +73,9 @@ const adminMenuItems: MenuItem[] = [
   { href: '/dashboard/feedback', label: 'Feedback', icon: MessageSquare },
   { href: '/dashboard/staff-shifts', label: 'Staff Shifts', icon: Clock },
   { href: '/dashboard/attendance', label: 'Attendance & Leave', icon: Clock },
+  { href: '/dashboard/consent-forms', label: 'Consent Forms', icon: FileSignature },
+  { href: '/dashboard/surgeries', label: 'Operation Theatre', icon: Scissors },
+  { href: '/dashboard/blood-bank', label: 'Blood Bank', icon: Droplet },
   { href: '/dashboard/billing', label: 'Billing', icon: FileText, moduleKey: 'billing' },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package, moduleKey: 'inventory' },
   { href: '/dashboard/pharmacy', label: 'Pharmacy', icon: Pill, moduleKey: 'inventory' },

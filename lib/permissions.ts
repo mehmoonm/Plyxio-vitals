@@ -98,6 +98,21 @@ export function canManageQueue(role?: Role | null) {
   return !!role && [...ADMIN, 'RECEPTIONIST', 'DOCTOR', 'NURSE'].includes(role);
 }
 
+// Matches the DB's consent_write policy
+export function canManageConsent(role?: Role | null) {
+  return !!role && [...ADMIN, 'DOCTOR', 'NURSE'].includes(role);
+}
+
+// Matches the DB's surgery_write/theatre_admin_write policies
+export function canManageSurgery(role?: Role | null) {
+  return !!role && [...ADMIN, 'DOCTOR', 'NURSE'].includes(role);
+}
+
+// Matches the DB's bloodunit_write/bloodrequest_write policies
+export function canManageBloodBank(role?: Role | null) {
+  return !!role && [...ADMIN, 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN'].includes(role);
+}
+
 // Matches the DB's referral_write policy
 export function canManageReferrals(role?: Role | null) {
   return !!role && [...ADMIN, 'DOCTOR'].includes(role);

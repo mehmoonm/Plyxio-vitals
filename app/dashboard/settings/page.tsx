@@ -39,6 +39,9 @@ const PAGE_LABELS: Record<PageKey, string> = {
   medicalCertificates: 'Medical Certificates',
   queue: 'Walk-in Queue',
   attendance: 'Attendance & Leave',
+  consentForms: 'Consent Forms',
+  surgeries: 'Operation Theatre',
+  bloodBank: 'Blood Bank',
 };
 
 const EDIT_MODULE_LABELS: Record<EditModule, string> = {

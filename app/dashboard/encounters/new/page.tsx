@@ -240,27 +240,43 @@ export default function NewEncounterPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">Clinical Notes</h2>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-1">Chief Complaint</label>
-            <textarea rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.chiefComplaint} onChange={(e) => setNotes({ ...notes, chiefComplaint: e.target.value })} />
+        <div className="bg-white rounded-2xl border p-6 space-y-5">
+          <h2 className="font-semibold text-gray-900">Clinical Notes (SOAP)</h2>
+
+          <div className="space-y-3 pb-4 border-b">
+            <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">S — Subjective</p>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1">Chief Complaint</label>
+              <textarea rows={2} placeholder="What the patient reports in their own words" className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.chiefComplaint} onChange={(e) => setNotes({ ...notes, chiefComplaint: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1">History of Present Illness</label>
+              <textarea rows={2} placeholder="Onset, duration, severity, associated symptoms" className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.historyOfPresentIllness} onChange={(e) => setNotes({ ...notes, historyOfPresentIllness: e.target.value })} />
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-1">History of Present Illness</label>
-            <textarea rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.historyOfPresentIllness} onChange={(e) => setNotes({ ...notes, historyOfPresentIllness: e.target.value })} />
+
+          <div className="space-y-3 pb-4 border-b">
+            <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">O — Objective</p>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1">Examination Findings</label>
+              <textarea rows={2} placeholder="Vitals, physical exam, test results observed" className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.examinationFindings} onChange={(e) => setNotes({ ...notes, examinationFindings: e.target.value })} />
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-1">Examination Findings</label>
-            <textarea rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.examinationFindings} onChange={(e) => setNotes({ ...notes, examinationFindings: e.target.value })} />
+
+          <div className="space-y-3 pb-4 border-b">
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">A — Assessment</p>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1">Diagnosis</label>
+              <Input placeholder="Clinical impression / diagnosis" value={notes.diagnosis} onChange={(e) => setNotes({ ...notes, diagnosis: e.target.value })} />
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-1">Diagnosis</label>
-            <Input value={notes.diagnosis} onChange={(e) => setNotes({ ...notes, diagnosis: e.target.value })} />
-          </div>
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-1">Plan</label>
-            <textarea rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.plan} onChange={(e) => setNotes({ ...notes, plan: e.target.value })} />
+
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-cyan-600 uppercase tracking-wider">P — Plan</p>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-1">Treatment Plan</label>
+              <textarea rows={2} placeholder="Medications, procedures, follow-up, referrals" className="w-full px-3 py-2 rounded-lg border border-gray-300 resize-none" value={notes.plan} onChange={(e) => setNotes({ ...notes, plan: e.target.value })} />
+            </div>
           </div>
         </div>
 
