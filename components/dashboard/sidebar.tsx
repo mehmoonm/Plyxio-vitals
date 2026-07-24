@@ -119,7 +119,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   // Personal account security (2FA) is available to every role, regardless
   // of business-module permissions -- it's not a business feature to toggle.
   if (user && menuItems.length > 0) {
-    menuItems = [...menuItems, { href: '/dashboard/security', label: 'Security', icon: ShieldCheck }];
+    menuItems = [...menuItems, { href: '/dashboard/my-payslips', label: 'My Payslips', icon: Wallet }, { href: '/dashboard/my-documents', label: 'My Documents', icon: FileText }, { href: '/dashboard/security', label: 'Security', icon: ShieldCheck }];
   }
 
   return (

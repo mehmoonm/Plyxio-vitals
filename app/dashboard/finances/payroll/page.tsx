@@ -8,7 +8,8 @@ import { useSettings } from '@/lib/settings-context';
 import { currencySymbol } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, RefreshCw, CheckCircle2, DollarSign } from 'lucide-react';
+import { Wallet, RefreshCw, CheckCircle2, DollarSign, Download, Printer } from 'lucide-react';
+import { generatePayslipPdf, printPayslipPdf } from '@/lib/pdf/payslip-pdf';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -22,6 +23,27 @@ export default function PayrollPage() {
   const { user } = useAuth();
   const { settings } = useSettings();
   const currency = currencySymbol(settings.currency);
+
+  const buildPayslipData = (r: any) => ({
+    hospitalName: settings.hospitalName,
+    hospitalLogo: settings.logo,
+    hospitalPhone: settings.phone,
+    hospitalEmail: settings.email,
+    hospitalAddress: settings.address,
+    hospitalCity: settings.city,
+    currencySymbol: currency,
+    staffName: r.User?.fullName || 'Unknown',
+    staffRole: r.User?.role || '',
+    periodLabel: `${MONTHS[r.periodMonth - 1]} ${r.periodYear}`,
+    compensationType: r.compensationType,
+    patientCount: r.patientCount,
+    baseAmount: Number(r.baseAmount),
+    bonus: Number(r.bonus),
+    deductions: Number(r.deductions),
+    totalAmount: Number(r.totalAmount),
+    status: r.status,
+    paidAt: r.paidAt,
+  });
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -199,6 +221,8 @@ export default function PayrollPage() {
                     <p className="text-lg font-bold text-white">{currency} {Number(r.totalAmount).toLocaleString()}</p>
                   </div>
                   <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="outline" onClick={() => printPayslipPdf(buildPayslipData(r))} className="gap-1"><Printer className="w-3.5 h-3.5" /></Button>
+                    <Button size="sm" variant="outline" onClick={() => generatePayslipPdf(buildPayslipData(r))} className="gap-1"><Download className="w-3.5 h-3.5" /></Button>
                     {r.status === 'DRAFT' && (
                       <Button size="sm" onClick={() => updateStatus(r.id, 'APPROVED')} className="gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Approve</Button>
                     )}

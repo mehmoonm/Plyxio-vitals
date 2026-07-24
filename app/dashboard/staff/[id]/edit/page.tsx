@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload, FileText, Trash2, Eye } from 'lucide-react';
 import { isAdmin } from '@/lib/permissions';
 import { RoleGuard } from '@/components/dashboard/role-guard';
 
@@ -16,10 +16,20 @@ export default function EditStaffPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [docType, setDocType] = useState('CONTRACT');
+  const [docExpiry, setDocExpiry] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [docError, setDocError] = useState('');
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState<any>(null);
   const [departments, setDepartments] = useState<any[]>([]);
+
+  const loadDocuments = async () => {
+    const { data } = await supabase.from('StaffDocument').select('*').eq('userId', params.id).order('uploadedAt', { ascending: false });
+    setDocuments(data || []);
+  };
 
   useEffect(() => {
     (async () => {
@@ -30,8 +40,48 @@ export default function EditStaffPage() {
       setForm(userRes.data);
       setDepartments(deptRes.data || []);
       setFetching(false);
+      await loadDocuments();
     })();
   }, [params.id]);
+
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.hospitalId) return;
+    setUploading(true);
+    setDocError('');
+
+    const path = `${user.hospitalId}/${params.id}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage.from('staff-documents').upload(path, file);
+    if (uploadError) { setDocError(uploadError.message); setUploading(false); return; }
+
+    const { error: insertError } = await supabase.from('StaffDocument').insert({
+      hospitalId: user.hospitalId,
+      userId: params.id,
+      type: docType,
+      title: file.name,
+      fileUrl: path,
+      expiryDate: docExpiry || null,
+      uploadedById: user.id,
+    });
+    setUploading(false);
+    if (insertError) { setDocError(insertError.message); return; }
+    setDocExpiry('');
+    e.target.value = '';
+    await loadDocuments();
+  };
+
+  const handleDocView = async (doc: any) => {
+    const { data, error } = await supabase.storage.from('staff-documents').createSignedUrl(doc.fileUrl, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    else setDocError(error?.message || 'Could not open document');
+  };
+
+  const handleDocDelete = async (doc: any) => {
+    if (!confirm('Delete this document?')) return;
+    await supabase.storage.from('staff-documents').remove([doc.fileUrl]);
+    await supabase.from('StaffDocument').delete().eq('id', doc.id);
+    await loadDocuments();
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -150,6 +200,59 @@ export default function EditStaffPage() {
           <Save className="w-4 h-4" />{loading ? 'Saving...' : 'Save Changes'}
         </Button>
       </form>
+
+      {isAdmin(user?.role) && (
+        <div className="bg-white rounded-2xl border p-8 space-y-4 max-w-2xl">
+          <h2 className="font-semibold text-gray-900">Documents</h2>
+          <p className="text-sm text-gray-500">Contracts, licenses, certifications, and other staff records.</p>
+
+          {docError && <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">{docError}</div>}
+
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Type</label>
+              <select value={docType} onChange={(e) => setDocType(e.target.value)} className="px-3 py-2 rounded-lg border border-gray-300 text-sm">
+                <option value="CONTRACT">Contract</option>
+                <option value="LICENSE">License</option>
+                <option value="CERTIFICATION">Certification</option>
+                <option value="ID">ID Document</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Expiry (optional)</label>
+              <Input type="date" value={docExpiry} onChange={(e) => setDocExpiry(e.target.value)} />
+            </div>
+            <label className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 cursor-pointer text-sm text-indigo-700">
+              <Upload className="w-4 h-4" />
+              {uploading ? 'Uploading...' : 'Upload File'}
+              <input type="file" onChange={handleDocUpload} disabled={uploading} className="hidden" />
+            </label>
+          </div>
+
+          {documents.length === 0 ? (
+            <p className="text-sm text-gray-400">No documents uploaded yet.</p>
+          ) : (
+            <div className="divide-y">
+              {documents.map((doc) => (
+                <div key={doc.id} className="py-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-900">{doc.title}</p>
+                      <p className="text-xs text-gray-500">{doc.type}{doc.expiryDate ? ` • Expires ${new Date(doc.expiryDate).toLocaleDateString()}` : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => handleDocView(doc)} className="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50"><Eye className="w-4 h-4" /></button>
+                    <button onClick={() => handleDocDelete(doc)} className="p-2 rounded-lg text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
     </RoleGuard>
   );
