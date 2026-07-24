@@ -87,3 +87,16 @@ export function canManageDepartments(role?: Role | null) {
 export function canManageFinances(role?: Role | null) {
   return !!role && [...ADMIN, 'ACCOUNTANT'].includes(role);
 }
+
+// Matches the DB's invoice_update/invoiceitem_update_delete policies.
+// Admins can always edit an existing invoice; billing clerks can only if
+// the hospital has opted in via Settings.
+export function canEditInvoice(role?: Role | null, allowBillingClerkInvoiceEdit?: boolean) {
+  if (isAdmin(role)) return true;
+  return role === 'BILLING_CLERK' && !!allowBillingClerkInvoiceEdit;
+}
+
+// Matches the DB's prescription_write policy
+export function canEditPrescription(role?: Role | null) {
+  return !!role && [...ADMIN, 'DOCTOR'].includes(role);
+}

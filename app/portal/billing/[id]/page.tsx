@@ -4,12 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePatientAuth } from '@/lib/patient-auth-context';
-import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase/client';
-import { generateInvoicePdf } from '@/lib/pdf/invoice-pdf';
+import { generateInvoicePdf, printInvoicePdf } from '@/lib/pdf/invoice-pdf';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Download } from 'lucide-react';
+import { ArrowLeft, CreditCard, Download, Printer } from 'lucide-react';
 
 const METHODS = [
   { value: 'JAZZCASH', label: 'JazzCash' },
@@ -21,8 +20,8 @@ const METHODS = [
 export default function PortalInvoiceDetailPage() {
   const params = useParams<{ id: string }>();
   const { patient } = usePatientAuth();
-  const { settings } = useSettings();
   const [invoice, setInvoice] = useState<any>(null);
+  const [hospital, setHospital] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState('JAZZCASH');
   const [busy, setBusy] = useState(false);
@@ -36,6 +35,17 @@ export default function PortalInvoiceDetailPage() {
   };
 
   useEffect(() => { load(); }, [params.id]);
+
+  // Patients authenticate through a separate context from staff, so we
+  // fetch the hospital's branding/contact info directly rather than via
+  // the staff-only settings context.
+  useEffect(() => {
+    if (!patient?.hospitalId) return;
+    (async () => {
+      const { data } = await supabase.from('Hospital').select('name, phone, email, address, city').eq('id', patient.hospitalId).single();
+      setHospital(data);
+    })();
+  }, [patient?.hospitalId]);
 
   const balance = invoice ? Number(invoice.total) - Number(invoice.amountPaid) : 0;
 
@@ -62,39 +72,44 @@ export default function PortalInvoiceDetailPage() {
     setBusy(false);
   };
 
-  const downloadPdf = () => {
-    if (!invoice) return;
-    generateInvoicePdf({
-      hospitalName: settings.hospitalName,
-      invoiceNo: invoice.invoiceNo,
-      createdAt: invoice.createdAt,
-      status: invoice.status,
-      patientName: patient?.fullName || 'Unknown',
-      patientMrn: patient?.mrn || '',
-      items: (invoice.InvoiceItem || []).map((it: any) => ({
-        description: it.description,
-        quantity: it.quantity,
-        unitPrice: Number(it.unitPrice),
-        amount: Number(it.amount),
-      })),
-      subtotal: Number(invoice.subtotal),
-      discount: Number(invoice.discount),
-      tax: Number(invoice.tax),
-      total: Number(invoice.total),
-      amountPaid: Number(invoice.amountPaid),
-    });
-  };
+  const buildPdfData = () => ({
+    hospitalName: hospital?.name || 'PLYXIO Vitals',
+    hospitalPhone: hospital?.phone,
+    hospitalEmail: hospital?.email,
+    hospitalAddress: hospital?.address,
+    hospitalCity: hospital?.city,
+    invoiceNo: invoice.invoiceNo,
+    createdAt: invoice.createdAt,
+    status: invoice.status,
+    patientName: patient?.fullName || 'Unknown',
+    patientMrn: patient?.mrn || '',
+    items: (invoice.InvoiceItem || []).map((it: any) => ({
+      description: it.description,
+      category: it.category,
+      quantity: it.quantity,
+      unitPrice: Number(it.unitPrice),
+      amount: Number(it.amount),
+    })),
+    subtotal: Number(invoice.subtotal),
+    discount: Number(invoice.discount),
+    tax: Number(invoice.tax),
+    total: Number(invoice.total),
+    amountPaid: Number(invoice.amountPaid),
+  });
 
   if (loading) return <p className="text-gray-400">Loading…</p>;
   if (!invoice) return <p className="text-gray-400">Invoice not found</p>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <Link href="/portal/billing">
           <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Billing</Button>
         </Link>
-        <Button onClick={downloadPdf} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download PDF</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => printInvoicePdf(buildPdfData())} variant="outline" className="gap-2"><Printer className="w-4 h-4" />Print</Button>
+          <Button onClick={() => generateInvoicePdf(buildPdfData())} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download PDF</Button>
+        </div>
       </div>
 
       <div className="glass-card rounded-2xl p-8 space-y-6">
@@ -107,11 +122,12 @@ export default function PortalInvoiceDetailPage() {
         </div>
 
         <table className="w-full text-sm text-gray-200">
-          <thead><tr className="border-b border-white/10 text-left text-gray-400"><th className="py-2">Description</th><th className="py-2 text-right">Amount</th></tr></thead>
+          <thead><tr className="border-b border-white/10 text-left text-gray-400"><th className="py-2">Description</th><th className="py-2">Category</th><th className="py-2 text-right">Amount</th></tr></thead>
           <tbody>
             {(invoice.InvoiceItem || []).map((it: any) => (
               <tr key={it.id} className="border-b border-white/5">
                 <td className="py-2">{it.description}</td>
+                <td className="py-2 text-gray-400">{it.category || '—'}</td>
                 <td className="py-2 text-right">Rs {Number(it.amount).toLocaleString()}</td>
               </tr>
             ))}

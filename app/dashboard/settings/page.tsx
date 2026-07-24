@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSettings } from '@/lib/settings-context';
 import { useAuth } from '@/lib/auth-context';
 import { useModules, type ModuleKey } from '@/lib/hospital-modules-context';
@@ -28,10 +28,32 @@ export default function SettingsPage() {
   const [hospitalName, setHospitalName] = useState(settings.hospitalName);
   const [logo, setLogo] = useState<string | null>(settings.logo);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(settings.theme);
+  const [phone, setPhone] = useState(settings.phone);
+  const [email, setEmail] = useState(settings.email);
+  const [address, setAddress] = useState(settings.address);
+  const [city, setCity] = useState(settings.city);
+  const [country, setCountry] = useState(settings.country);
+  const [allowBillingClerkInvoiceEdit, setAllowBillingClerkInvoiceEdit] = useState(settings.allowBillingClerkInvoiceEdit);
   const [saved, setSaved] = useState(false);
   const [moduleSaving, setModuleSaving] = useState<ModuleKey | null>(null);
   const [moduleError, setModuleError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Contact/branding fields load asynchronously from the database, so sync
+  // local editable state once they arrive (rather than only at first mount)
+  useEffect(() => {
+    setPrimaryColor(settings.primaryColor);
+    setAccentColor(settings.accentColor);
+    setHospitalName(settings.hospitalName);
+    setLogo(settings.logo);
+    setTheme(settings.theme);
+    setPhone(settings.phone);
+    setEmail(settings.email);
+    setAddress(settings.address);
+    setCity(settings.city);
+    setCountry(settings.country);
+    setAllowBillingClerkInvoiceEdit(settings.allowBillingClerkInvoiceEdit);
+  }, [settings]);
 
   const toggleModule = async (key: ModuleKey) => {
     setModuleSaving(key);
@@ -48,6 +70,12 @@ export default function SettingsPage() {
       hospitalName,
       logo,
       theme,
+      phone,
+      email,
+      address,
+      city,
+      country,
+      allowBillingClerkInvoiceEdit,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -244,6 +272,58 @@ export default function SettingsPage() {
               <p className="text-xs text-slate-400">Supported formats: PNG, JPG, SVG (Max 5MB)</p>
             </div>
           </div>
+
+          {/* Contact Info */}
+          <div className="glass-card rounded-2xl p-6 space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-white">Contact Information</h2>
+              <p className="text-sm text-slate-400 mt-1">Shown to patients and printed on invoices, prescriptions, and other documents.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-300 block mb-2">Phone</label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+92 300 1234567" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-300 block mb-2">Email</label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contact@yourhospital.com" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-300 block mb-2">City</label>
+                <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Karachi" />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-300 block mb-2">Country</label>
+                <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Pakistan" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-300 block mb-2">Address</label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street address" />
+            </div>
+          </div>
+
+          {/* Billing Controls */}
+          {isAdmin(user?.role) && (
+            <div className="glass-card rounded-2xl p-6 space-y-3">
+              <div>
+                <h2 className="text-xl font-bold text-white">Billing Controls</h2>
+                <p className="text-sm text-slate-400 mt-1">By default, only admins can edit an invoice after it's created.</p>
+              </div>
+              <label className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3 cursor-pointer">
+                <div>
+                  <p className="text-white text-sm font-medium">Allow Billing Clerks to edit invoices</p>
+                  <p className="text-xs text-slate-400">Turn on only if you trust your billing staff to correct their own mistakes.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={allowBillingClerkInvoiceEdit}
+                  onChange={(e) => { setAllowBillingClerkInvoiceEdit(e.target.checked); updateSettings({ allowBillingClerkInvoiceEdit: e.target.checked }); }}
+                  className="w-5 h-5"
+                />
+              </label>
+            </div>
+          )}
 
           {/* Modules */}
           {isAdmin(user?.role) && (

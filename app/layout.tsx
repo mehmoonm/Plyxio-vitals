@@ -47,11 +47,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased" style={{ backgroundImage: 'var(--background-gradient)' }}>
-        <SettingsProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <SettingsProvider>
             {children}
-          </AuthProvider>
-        </SettingsProvider>
+          </SettingsProvider>
+        </AuthProvider>
         <ServiceWorkerRegistration />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

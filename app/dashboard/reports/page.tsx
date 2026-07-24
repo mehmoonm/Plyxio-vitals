@@ -35,6 +35,8 @@ export default function ReportsPage() {
   const [appointmentData, setAppointmentData] = useState<{ month: string; total: number; completed: number; cancelled: number; noShow: number }[]>([]);
   const [patientGrowth, setPatientGrowth] = useState<{ month: string; newPatients: number }[]>([]);
   const [doctorStats, setDoctorStats] = useState<any[]>([]);
+  const [categoryRevenue, setCategoryRevenue] = useState<{ category: string; amount: number }[]>([]);
+  const [topDiagnoses, setTopDiagnoses] = useState<{ diagnosis: string; count: number }[]>([]);
   const [totals, setTotals] = useState({ revenue: 0, patients: 0, appointments: 0, completionRate: 0 });
 
   useEffect(() => {
@@ -44,13 +46,15 @@ export default function ReportsPage() {
       monthsCutoff.setMonth(monthsCutoff.getMonth() - MONTHS_BACK);
       const cutoffIso = monthsCutoff.toISOString();
 
-      const [paymentsRes, appointmentsRes, patientsRes, doctorsRes, allPatientsCount, allInvoicesRes] = await Promise.all([
+      const [paymentsRes, appointmentsRes, patientsRes, doctorsRes, allPatientsCount, allInvoicesRes, invoiceItemsRes, diagnosesRes] = await Promise.all([
         supabase.from('Payment').select('amount, paidAt').gte('paidAt', cutoffIso),
         supabase.from('Appointment').select('scheduledAt, status, doctorId, User(fullName)').gte('scheduledAt', cutoffIso),
         supabase.from('Patient').select('createdAt').gte('createdAt', cutoffIso),
         supabase.from('User').select('id, fullName').eq('role', 'DOCTOR').eq('isActive', true),
         supabase.from('Patient').select('id', { count: 'exact', head: true }),
         supabase.from('Invoice').select('amountPaid, status'),
+        supabase.from('InvoiceItem').select('category, amount, Invoice!inner(createdAt)').gte('Invoice.createdAt', cutoffIso),
+        supabase.from('Encounter').select('diagnosis').gte('createdAt', cutoffIso).not('diagnosis', 'is', null),
       ]);
 
       const monthKeys = lastNMonthKeys(MONTHS_BACK);
@@ -91,6 +95,31 @@ export default function ReportsPage() {
         if (k in patByMonth) patByMonth[k] += 1;
       }
       setPatientGrowth(monthKeys.map((k) => ({ month: monthLabel(k), newPatients: patByMonth[k] })));
+
+      // Revenue by category (Pharmacy, Bed Charges, Lab, etc)
+      const catTotals: Record<string, number> = {};
+      for (const it of invoiceItemsRes.data || []) {
+        const cat = it.category || 'Other';
+        catTotals[cat] = (catTotals[cat] || 0) + Number(it.amount || 0);
+      }
+      setCategoryRevenue(Object.entries(catTotals).map(([category, amount]) => ({ category, amount: Math.round(amount) })).sort((a, b) => b.amount - a.amount));
+
+      // Most common diagnoses -- loosely grouped by trimmed/lowercased text
+      // since diagnosis is free text (e.g. "Flu" and "flu" count together)
+      const diagCounts: Record<string, { label: string; count: number }> = {};
+      for (const e of diagnosesRes.data || []) {
+        const raw = (e.diagnosis || '').trim();
+        if (!raw) continue;
+        const key = raw.toLowerCase();
+        if (!diagCounts[key]) diagCounts[key] = { label: raw, count: 0 };
+        diagCounts[key].count += 1;
+      }
+      setTopDiagnoses(
+        Object.values(diagCounts)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10)
+          .map((d) => ({ diagnosis: d.label, count: d.count }))
+      );
 
       // Top-line totals
       const totalRevenue = (allInvoicesRes.data || []).reduce((s, i: any) => s + Number(i.amountPaid || 0), 0);
@@ -225,6 +254,62 @@ export default function ReportsPage() {
             </table>
           </div>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="p-6 pb-0">
+            <h2 className="text-lg font-bold text-white mb-1">Revenue by Category</h2>
+            <p className="text-xs text-gray-400 mb-4">Where your invoice charges are coming from ({MONTHS_BACK}mo)</p>
+          </div>
+          {categoryRevenue.length === 0 ? (
+            <p className="text-gray-400 p-6 pt-0">No invoice data yet</p>
+          ) : (
+            <div className="px-6 pb-6 space-y-2">
+              {categoryRevenue.map((c) => {
+                const max = categoryRevenue[0]?.amount || 1;
+                return (
+                  <div key={c.category} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-300">{c.category}</span>
+                      <span className="text-white font-semibold">Rs {c.amount.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(c.amount / max) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="p-6 pb-0">
+            <h2 className="text-lg font-bold text-white mb-1">Most Common Diagnoses</h2>
+            <p className="text-xs text-gray-400 mb-4">From visit records ({MONTHS_BACK}mo) — grouped loosely by spelling</p>
+          </div>
+          {topDiagnoses.length === 0 ? (
+            <p className="text-gray-400 p-6 pt-0">No diagnosis data yet</p>
+          ) : (
+            <div className="px-6 pb-6 space-y-2">
+              {topDiagnoses.map((d) => {
+                const max = topDiagnoses[0]?.count || 1;
+                return (
+                  <div key={d.diagnosis} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-300 capitalize">{d.diagnosis}</span>
+                      <span className="text-white font-semibold">{d.count}</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-cyan-500 rounded-full" style={{ width: `${(d.count / max) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

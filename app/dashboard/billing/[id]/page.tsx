@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import { useSettings } from '@/lib/settings-context';
-import { canManageBilling } from '@/lib/permissions';
-import { generateInvoicePdf } from '@/lib/pdf/invoice-pdf';
+import { canManageBilling, canEditInvoice } from '@/lib/permissions';
+import { generateInvoicePdf, printInvoicePdf } from '@/lib/pdf/invoice-pdf';
 import { logAudit } from '@/lib/audit-log';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, DollarSign, Download } from 'lucide-react';
+import { ArrowLeft, DollarSign, Download, Printer, Pencil } from 'lucide-react';
 
 export default function InvoiceDetailPage() {
   const params = useParams<{ id: string }>();
@@ -72,27 +72,30 @@ export default function InvoiceDetailPage() {
     setBusy(false);
   };
 
-  const downloadPdf = () => {
-    generateInvoicePdf({
-      hospitalName: settings.hospitalName,
-      invoiceNo: invoice.invoiceNo,
-      createdAt: invoice.createdAt,
-      status: invoice.status,
-      patientName: invoice.Patient?.fullName || 'Unknown',
-      patientMrn: invoice.Patient?.mrn || '',
-      items: (invoice.InvoiceItem || []).map((it: any) => ({
-        description: it.description,
-        quantity: it.quantity,
-        unitPrice: Number(it.unitPrice),
-        amount: Number(it.amount),
-      })),
-      subtotal: Number(invoice.subtotal),
-      discount: Number(invoice.discount),
-      tax: Number(invoice.tax),
-      total: Number(invoice.total),
-      amountPaid: Number(invoice.amountPaid),
-    });
-  };
+  const buildPdfData = () => ({
+    hospitalName: settings.hospitalName,
+    hospitalPhone: settings.phone,
+    hospitalEmail: settings.email,
+    hospitalAddress: settings.address,
+    hospitalCity: settings.city,
+    invoiceNo: invoice.invoiceNo,
+    createdAt: invoice.createdAt,
+    status: invoice.status,
+    patientName: invoice.Patient?.fullName || 'Unknown',
+    patientMrn: invoice.Patient?.mrn || '',
+    items: (invoice.InvoiceItem || []).map((it: any) => ({
+      description: it.description,
+      category: it.category,
+      quantity: it.quantity,
+      unitPrice: Number(it.unitPrice),
+      amount: Number(it.amount),
+    })),
+    subtotal: Number(invoice.subtotal),
+    discount: Number(invoice.discount),
+    tax: Number(invoice.tax),
+    total: Number(invoice.total),
+    amountPaid: Number(invoice.amountPaid),
+  });
 
   if (loading) return <div className="text-gray-500">Loading…</div>;
   if (!invoice) return <div className="text-gray-500">Invoice not found</div>;
@@ -101,11 +104,19 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <Link href="/dashboard/billing">
           <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back to Billing</Button>
         </Link>
-        <Button onClick={downloadPdf} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download PDF</Button>
+        <div className="flex gap-2">
+          {canEditInvoice(user?.role, settings.allowBillingClerkInvoiceEdit) && (
+            <Link href={`/dashboard/billing/${params.id}/edit`}>
+              <Button variant="outline" className="gap-2"><Pencil className="w-4 h-4" />Edit</Button>
+            </Link>
+          )}
+          <Button onClick={() => printInvoicePdf(buildPdfData())} variant="outline" className="gap-2"><Printer className="w-4 h-4" />Print</Button>
+          <Button onClick={() => generateInvoicePdf(buildPdfData())} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download PDF</Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border p-8 space-y-6">
@@ -123,6 +134,7 @@ export default function InvoiceDetailPage() {
           <thead>
             <tr className="border-b text-left text-gray-500">
               <th className="py-2">Description</th>
+              <th className="py-2">Category</th>
               <th className="py-2">Qty</th>
               <th className="py-2">Unit Price</th>
               <th className="py-2 text-right">Amount</th>
@@ -132,6 +144,7 @@ export default function InvoiceDetailPage() {
             {(invoice.InvoiceItem || []).map((it: any) => (
               <tr key={it.id} className="border-b">
                 <td className="py-2">{it.description}</td>
+                <td className="py-2 text-gray-500">{it.category || '—'}</td>
                 <td className="py-2">{it.quantity}</td>
                 <td className="py-2">Rs {Number(it.unitPrice).toLocaleString()}</td>
                 <td className="py-2 text-right">Rs {Number(it.amount).toLocaleString()}</td>

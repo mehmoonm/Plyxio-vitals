@@ -2,16 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { usePatientAuth } from '@/lib/patient-auth-context';
-import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase/client';
-import { generatePrescriptionPdf } from '@/lib/pdf/prescription-pdf';
+import { generatePrescriptionPdf, printPrescriptionPdf } from '@/lib/pdf/prescription-pdf';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 
 export default function PortalPrescriptionsPage() {
   const { patient } = usePatientAuth();
-  const { settings } = useSettings();
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [hospital, setHospital] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +26,17 @@ export default function PortalPrescriptionsPage() {
     })();
   }, [patient]);
 
-  const downloadPdf = (enc: any) => {
+  // Patients authenticate through a separate context from staff, so we
+  // fetch the hospital's branding/contact info directly here.
+  useEffect(() => {
+    if (!patient?.hospitalId) return;
+    (async () => {
+      const { data } = await supabase.from('Hospital').select('name, phone, email, address, city').eq('id', patient.hospitalId).single();
+      setHospital(data);
+    })();
+  }, [patient?.hospitalId]);
+
+  const buildPdfData = (enc: any) => {
     const items = enc.Prescription.flatMap((rx: any) => rx.PrescriptionItem || []).map((item: any) => ({
       drugName: item.Drug?.name || 'Unknown',
       strength: item.Drug?.strength,
@@ -38,8 +47,12 @@ export default function PortalPrescriptionsPage() {
       instructions: item.instructions,
     }));
 
-    generatePrescriptionPdf({
-      hospitalName: settings.hospitalName,
+    return {
+      hospitalName: hospital?.name || 'PLYXIO Vitals',
+      hospitalPhone: hospital?.phone,
+      hospitalEmail: hospital?.email,
+      hospitalAddress: hospital?.address,
+      hospitalCity: hospital?.city,
       patientName: patient?.fullName || 'Unknown',
       patientMrn: patient?.mrn || '',
       doctorName: enc.User?.fullName || 'Unknown',
@@ -49,7 +62,7 @@ export default function PortalPrescriptionsPage() {
       chiefComplaint: enc.chiefComplaint,
       plan: enc.plan,
       items,
-    });
+    };
   };
 
   return (
@@ -69,7 +82,10 @@ export default function PortalPrescriptionsPage() {
                   <p className="text-white font-semibold">{enc.diagnosis || 'Prescription'}</p>
                   <p className="text-xs text-gray-400">Dr. {enc.User?.fullName} • {new Date(enc.createdAt).toLocaleDateString()}</p>
                 </div>
-                <Button onClick={() => downloadPdf(enc)} variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" />PDF</Button>
+                <div className="flex gap-2">
+                  <Button onClick={() => printPrescriptionPdf(buildPdfData(enc))} variant="outline" size="sm" className="gap-2"><Printer className="w-4 h-4" />Print</Button>
+                  <Button onClick={() => generatePrescriptionPdf(buildPdfData(enc))} variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" />PDF</Button>
+                </div>
               </div>
               <div className="space-y-2">
                 {enc.Prescription.flatMap((rx: any) => rx.PrescriptionItem || []).map((item: any) => (

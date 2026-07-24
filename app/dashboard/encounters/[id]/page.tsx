@@ -5,13 +5,16 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useSettings } from '@/lib/settings-context';
-import { generatePrescriptionPdf } from '@/lib/pdf/prescription-pdf';
+import { generatePrescriptionPdf, printPrescriptionPdf } from '@/lib/pdf/prescription-pdf';
+import { useAuth } from '@/lib/auth-context';
+import { canEditPrescription } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, Printer, Pencil } from 'lucide-react';
 
 export default function EncounterDetailPage() {
   const params = useParams<{ id: string }>();
   const { settings } = useSettings();
+  const { user } = useAuth();
   const [encounter, setEncounter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,7 @@ export default function EncounterDetailPage() {
   const vitals = encounter.Vitals?.[0];
   const hasPrescription = encounter.Prescription?.length > 0;
 
-  const downloadPdf = () => {
+  const buildPdfData = () => {
     const items = encounter.Prescription.flatMap((rx: any) => rx.PrescriptionItem || []).map((item: any) => ({
       drugName: item.Drug?.name || 'Unknown',
       strength: item.Drug?.strength,
@@ -44,8 +47,12 @@ export default function EncounterDetailPage() {
       instructions: item.instructions,
     }));
 
-    generatePrescriptionPdf({
+    return {
       hospitalName: settings.hospitalName,
+      hospitalPhone: settings.phone,
+      hospitalEmail: settings.email,
+      hospitalAddress: settings.address,
+      hospitalCity: settings.city,
       patientName: encounter.Patient?.fullName || 'Unknown',
       patientMrn: encounter.Patient?.mrn || '',
       doctorName: encounter.User?.fullName || 'Unknown',
@@ -55,18 +62,28 @@ export default function EncounterDetailPage() {
       chiefComplaint: encounter.chiefComplaint,
       plan: encounter.plan,
       items,
-    });
+    };
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <Link href="/dashboard/appointments">
           <Button variant="outline" className="gap-2"><ArrowLeft className="w-4 h-4" />Back</Button>
         </Link>
-        {hasPrescription && (
-          <Button onClick={downloadPdf} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download Prescription</Button>
-        )}
+        <div className="flex gap-2">
+          {canEditPrescription(user?.role) && encounter.appointmentId && (
+            <Link href={`/dashboard/encounters/new?appointmentId=${encounter.appointmentId}&patientId=${encounter.patientId}&doctorId=${encounter.doctorId}`}>
+              <Button variant="outline" className="gap-2"><Pencil className="w-4 h-4" />Edit</Button>
+            </Link>
+          )}
+          {hasPrescription && (
+            <>
+              <Button onClick={() => printPrescriptionPdf(buildPdfData())} variant="outline" className="gap-2"><Printer className="w-4 h-4" />Print</Button>
+              <Button onClick={() => generatePrescriptionPdf(buildPdfData())} variant="outline" className="gap-2"><Download className="w-4 h-4" />Download</Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border p-8 space-y-6">
