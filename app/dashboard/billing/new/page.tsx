@@ -39,6 +39,11 @@ export default function NewInvoicePage() {
   const [patientId, setPatientId] = useState('');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
   const [tax, setTax] = useState(0);
   const [items, setItems] = useState<LineItem[]>([{ description: '', category: 'Consultation', departmentId: '', quantity: 1, unitPrice: 0 }]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -177,6 +182,7 @@ export default function NewInvoicePage() {
         tax,
         total,
         amountPaid: 0,
+        dueDate,
       })
       .select()
       .single();
@@ -294,7 +300,7 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-3 gap-4 pt-4 border-t">
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-2">Discount (Rs)</label>
             <Input type="number" min={0} value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
@@ -302,6 +308,10 @@ export default function NewInvoicePage() {
           <div>
             <label className="text-sm font-semibold text-gray-700 block mb-2">Tax (Rs)</label>
             <Input type="number" min={0} value={tax} onChange={(e) => setTax(Number(e.target.value))} />
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-2">Due Date</label>
+            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
         </div>
 

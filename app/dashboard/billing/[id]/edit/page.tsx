@@ -35,6 +35,7 @@ export default function EditInvoicePage() {
   const [deletedItemIds, setDeletedItemIds] = useState<string[]>([]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +52,7 @@ export default function EditInvoicePage() {
       setDepartments(deptRes.data || []);
       setDiscount(Number(data?.discount || 0));
       setTax(Number(data?.tax || 0));
+      setDueDate(data?.dueDate || '');
       setLoading(false);
     })();
   }, [params.id]);
@@ -110,7 +112,7 @@ export default function EditInvoicePage() {
     }
 
     const newStatus = invoice.amountPaid >= total ? 'PAID' : Number(invoice.amountPaid) > 0 ? 'PARTIALLY_PAID' : 'UNPAID';
-    const { error: updateError } = await supabase.from('Invoice').update({ subtotal, discount, tax, total, status: newStatus }).eq('id', params.id);
+    const { error: updateError } = await supabase.from('Invoice').update({ subtotal, discount, tax, total, status: newStatus, dueDate: dueDate || null }).eq('id', params.id);
 
     setSaving(false);
     if (updateError) { setError(updateError.message); return; }
@@ -176,7 +178,7 @@ export default function EditInvoicePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t">
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-2">Discount (Rs)</label>
               <Input type="number" min={0} value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
@@ -184,6 +186,10 @@ export default function EditInvoicePage() {
             <div>
               <label className="text-sm font-semibold text-gray-700 block mb-2">Tax (Rs)</label>
               <Input type="number" min={0} value={tax} onChange={(e) => setTax(Number(e.target.value))} />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">Due Date</label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </div>
           </div>
 
