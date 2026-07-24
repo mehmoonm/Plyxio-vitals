@@ -313,17 +313,30 @@ export default function ReportsPage() {
                   <th className="py-3 px-6">Total Appointments</th>
                   <th className="py-3 px-6">Completed</th>
                   <th className="py-3 px-6">Completion Rate</th>
+                  <th className="py-3 px-6">vs Average</th>
                 </tr>
               </thead>
               <tbody>
-                {doctorStats.map((d) => (
-                  <tr key={d.name} className="border-b border-white/5">
-                    <td className="py-3 px-6 text-white font-medium">Dr. {d.name}</td>
-                    <td className="py-3 px-6 text-gray-300">{d.total}</td>
-                    <td className="py-3 px-6 text-gray-300">{d.completed}</td>
-                    <td className="py-3 px-6 text-gray-300">{d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0}%</td>
-                  </tr>
-                ))}
+                {(() => {
+                  const avgRate = doctorStats.reduce((s, d) => s + (d.total > 0 ? (d.completed / d.total) * 100 : 0), 0) / doctorStats.length;
+                  return doctorStats.map((d) => {
+                    const rate = d.total > 0 ? (d.completed / d.total) * 100 : 0;
+                    const delta = rate - avgRate;
+                    return (
+                      <tr key={d.name} className="border-b border-white/5">
+                        <td className="py-3 px-6 text-white font-medium">Dr. {d.name}</td>
+                        <td className="py-3 px-6 text-gray-300">{d.total}</td>
+                        <td className="py-3 px-6 text-gray-300">{d.completed}</td>
+                        <td className="py-3 px-6 text-gray-300">{Math.round(rate)}%</td>
+                        <td className="py-3 px-6">
+                          <span className={`font-semibold ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {delta >= 0 ? '+' : ''}{Math.round(delta)} pts
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
@@ -502,6 +515,56 @@ export default function ReportsPage() {
           </div>
         </div>
       )}
+
+      {(departmentRevenue.length > 0 || departmentExpense.length > 0) && (() => {
+        const deptNames = Array.from(new Set([...departmentRevenue.map((d) => d.department), ...departmentExpense.map((d) => d.department)]));
+        const benchmarkRows = deptNames.map((name) => {
+          const revenue = departmentRevenue.find((d) => d.department === name)?.amount || 0;
+          const expense = departmentExpense.find((d) => d.department === name)?.amount || 0;
+          return { name, revenue, expense, net: revenue - expense };
+        }).sort((a, b) => b.net - a.net);
+        const avgNet = benchmarkRows.reduce((s, r) => s + r.net, 0) / (benchmarkRows.length || 1);
+
+        return (
+          <div className="glass-card rounded-2xl overflow-hidden">
+            <div className="p-6 pb-0">
+              <h2 className="text-lg font-bold text-white mb-1">Department Benchmarking</h2>
+              <p className="text-xs text-gray-400 mb-4">Revenue vs expenses, ranked by net contribution ({range.label})</p>
+            </div>
+            <div className="overflow-x-auto pb-2">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-left text-gray-400">
+                    <th className="py-3 px-6">Department</th>
+                    <th className="py-3 px-6">Revenue</th>
+                    <th className="py-3 px-6">Expenses</th>
+                    <th className="py-3 px-6">Net</th>
+                    <th className="py-3 px-6">vs Average</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {benchmarkRows.map((r) => {
+                    const delta = r.net - avgNet;
+                    return (
+                      <tr key={r.name} className="border-b border-white/5">
+                        <td className="py-3 px-6 text-white font-medium">{r.name}</td>
+                        <td className="py-3 px-6 text-emerald-300">{currency} {r.revenue.toLocaleString()}</td>
+                        <td className="py-3 px-6 text-red-300">{currency} {r.expense.toLocaleString()}</td>
+                        <td className={`py-3 px-6 font-semibold ${r.net >= 0 ? 'text-white' : 'text-red-300'}`}>{currency} {r.net.toLocaleString()}</td>
+                        <td className="py-3 px-6">
+                          <span className={`font-semibold ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {delta >= 0 ? '+' : ''}{currency} {Math.round(delta).toLocaleString()}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
